@@ -20,12 +20,14 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
     }
 
     .progress-wrap {
-      position: fixed;
-      inset: var(--nav-height) 0 auto;
+      position: sticky;
+      top: var(--nav-height);
       height: 1px;
       background: color-mix(in srgb, var(--border-light) 55%, transparent);
-      z-index: 12;
+      z-index: 11;
       pointer-events: none;
+      width: min(calc(100% - 2rem), calc(var(--content-max-width) + 5rem));
+      margin: 0 auto;
     }
 
     .progress-bar {
@@ -142,6 +144,7 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
         padding: var(--space-7) 0 var(--space-8);
       }
 
+      .progress-wrap,
       .reader-head,
       .reader-card,
       .reader-nav {
