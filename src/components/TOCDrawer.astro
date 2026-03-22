@@ -3,242 +3,383 @@ import { getCollection } from 'astro:content';
 
 interface Props {
   bookId: string;
+  currentChapterSlug: string;
 }
 
-const { bookId } = Astro.props;
+const { bookId, currentChapterSlug } = Astro.props;
 const chapters = await getCollection('chapters', ({ data }) => data.bookId === bookId);
 chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
+const book = (await getCollection('books')).find((entry) => entry.id === bookId);
+const hasChapters = chapters.length > 0;
 ---
 
-<button id="toc-fab" class="toc-fab" type="button" aria-label="打开目录" aria-controls="toc-panel" aria-expanded="false">
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <line x1="3" y1="6" x2="21" y2="6"></line>
-    <line x1="3" y1="12" x2="21" y2="12"></line>
-    <line x1="3" y1="18" x2="21" y2="18"></line>
-  </svg>
-  <span>目录</span>
-</button>
+<div id="floating-directory-root" aria-hidden="true" hidden>
+  <div class="floating-directory-backdrop" data-directory-backdrop hidden></div>
 
-<div id="toc-mask" class="toc-mask" hidden></div>
+  <div class="floating-directory-shell" data-directory-shell data-has-chapters={String(hasChapters)}>
+    <aside
+      class="floating-directory-panel"
+      id="floating-directory-panel"
+      data-directory-panel
+      aria-hidden="true"
+      aria-label={`${book?.data.title || 'Book'} chapter directory`}
+    >
+      <div class="floating-directory-header">
+        <div>
+          <p class="floating-directory-kicker">Book directory</p>
+          <div class="floating-directory-title-row">
+            <h2>{book?.data.title || '目录'}</h2>
+            <span class="floating-directory-count">{chapters.length} chapters</span>
+          </div>
+        </div>
 
-<aside id="toc-panel" class="toc-panel" aria-hidden="true">
-  <div class="toc-panel-head">
-    <div>
-      <p class="toc-kicker">Contents</p>
-      <h3>目录</h3>
-    </div>
-    <button id="toc-close" type="button" aria-label="关闭目录">✕</button>
+        <button class="floating-directory-close" type="button" data-directory-close aria-label="关闭目录">✕</button>
+      </div>
+
+      <div class="floating-directory-body">
+        {hasChapters ? (
+          <ol class="floating-directory-list">
+            {chapters.map((chapter) => {
+              const isCurrent = chapter.slug === currentChapterSlug;
+              return (
+                <li class="floating-directory-item">
+                  <a
+                    class:list={["floating-directory-link", { "is-current": isCurrent }]}
+                    href={`/${bookId}/${chapter.slug}`}
+                    aria-current={isCurrent ? 'page' : undefined}
+                  >
+                    <span class="floating-directory-index">
+                      {chapter.data.isAppendix ? '附录' : String(chapter.data.chapterNumber).padStart(2, '0')}
+                    </span>
+                    <span class="floating-directory-copy">
+                      <span class="floating-directory-item-title">{chapter.data.title}</span>
+                      <span class="floating-directory-item-meta">
+                        {isCurrent ? '当前章节' : 'Chapter'}
+                      </span>
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <p class="floating-directory-empty">当前书籍暂时没有可显示的章节目录。</p>
+        )}
+      </div>
+    </aside>
+
+    <button
+      class="floating-directory-button"
+      data-directory-button
+      type="button"
+      aria-controls="floating-directory-panel"
+      aria-expanded="false"
+      aria-label="打开章节目录"
+      disabled={!hasChapters}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+      <span class="floating-directory-button-label">目录</span>
+    </button>
   </div>
-
-  <ul class="toc-list">
-    {chapters.map((ch) => (
-      <li>
-        <a href={`/${bookId}/${ch.slug}`}>
-          <span class="toc-index">{ch.data.isAppendix ? '附录' : String(ch.data.chapterNumber).padStart(2, '0')}</span>
-          <span class="toc-title">{ch.data.title}</span>
-        </a>
-      </li>
-    ))}
-  </ul>
-</aside>
+</div>
 
 <style>
-  .toc-fab {
-    position: fixed !important;
-    right: 1rem;
-    bottom: 1rem;
-    z-index: 250;
-    height: 2.95rem;
-    min-width: 2.95rem;
-    padding: 0 .8rem;
-    border-radius: 999px;
+  :global(body.directory-panel-open) {
+    overflow: hidden;
+  }
+
+  .floating-directory-shell {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 400;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+    pointer-events: none;
+  }
+
+  .floating-directory-shell[data-has-chapters='false'] {
+    display: none;
+  }
+
+  .floating-directory-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 398;
+    background: rgba(15, 23, 42, 0.32);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-quick);
+  }
+
+  .floating-directory-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .floating-directory-panel {
+    width: min(23rem, calc(100vw - 1.5rem));
+    max-height: min(72vh, 34rem);
+    overflow: hidden;
+    border-radius: 1.25rem;
     border: 1px solid var(--border-light);
-    background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
-    color: var(--text-primary);
+    background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(0.75rem) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity var(--transition-quick), transform var(--transition-quick), visibility var(--transition-quick);
+    pointer-events: auto;
+  }
+
+  .floating-directory-panel.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .floating-directory-button {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: .38rem;
+    gap: 0.5rem;
+    min-height: 3.2rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-light);
+    background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+    color: var(--text-primary);
     box-shadow: var(--shadow-card);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    transition: opacity 140ms ease-out, transform 140ms ease-out, border-color 140ms ease-out;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    cursor: pointer;
+    pointer-events: auto;
   }
 
-  .toc-fab span {
-    font-size: .76rem;
-    color: var(--text-secondary);
-    white-space: nowrap;
-  }
-
-  .toc-fab:hover,
-  .toc-fab:focus-visible {
+  .floating-directory-button:hover,
+  .floating-directory-button:focus-visible {
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--accent) 28%, var(--border-light));
   }
 
-  .toc-fab.is-scrolling {
-    opacity: .5;
+  .floating-directory-button:disabled {
+    display: none;
   }
 
-  .toc-mask {
-    position: fixed;
-    inset: 0;
-    z-index: 240;
-    background: rgba(0,0,0,.28);
+  .floating-directory-button-label {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    white-space: nowrap;
   }
 
-  .toc-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 260;
-    width: min(24rem, calc(100vw - 1.2rem));
-    background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
-    border-right: 1px solid var(--border-light);
-    box-shadow: 0 14px 40px rgba(0,0,0,.2);
-    transform: translateX(-102%);
-    transition: transform 170ms ease-out;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .toc-panel.is-open {
-    transform: translateX(0);
-  }
-
-  .toc-panel-head {
-    padding: .95rem .9rem .75rem;
+  .floating-directory-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: .6rem;
+    gap: 0.75rem;
+    padding: 1rem 1rem 0.8rem;
     border-bottom: 1px solid var(--border-light);
   }
 
-  .toc-kicker {
-    margin: 0 0 .22rem;
+  .floating-directory-kicker {
+    margin: 0 0 0.25rem;
     color: var(--text-tertiary);
-    font-size: .7rem;
-    letter-spacing: .12em;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 
-  .toc-panel-head h3 {
-    margin: 0;
-    font-size: 1.15rem;
-    letter-spacing: -.02em;
+  .floating-directory-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    flex-wrap: wrap;
   }
 
-  #toc-close {
-    width: 2.2rem;
-    height: 2.2rem;
+  .floating-directory-title-row h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.2;
+    font-family: var(--font-sans);
+  }
+
+  .floating-directory-count {
+    color: var(--text-tertiary);
+    font-size: 0.82rem;
+  }
+
+  .floating-directory-close {
+    width: 2.25rem;
+    height: 2.25rem;
     border-radius: 999px;
     display: grid;
     place-items: center;
     color: var(--text-secondary);
+    cursor: pointer;
   }
 
-  #toc-close:hover,
-  #toc-close:focus-visible {
+  .floating-directory-close:hover,
+  .floating-directory-close:focus-visible {
     background: var(--accent-soft);
     color: var(--text-primary);
   }
 
-  .toc-list {
-    margin: 0;
-    padding: .35rem .45rem .75rem;
+  .floating-directory-body {
+    max-height: min(56vh, 28rem);
+    overflow: auto;
+  }
+
+  .floating-directory-list {
     list-style: none;
-    overflow-y: auto;
-    flex: 1;
+    margin: 0;
+    padding: 0.6rem;
   }
 
-  .toc-list li + li {
-    border-top: 1px solid var(--border-light);
+  .floating-directory-item {
+    margin: 0;
   }
 
-  .toc-list a {
+  .floating-directory-link {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: .75rem;
+    gap: 0.7rem;
     align-items: start;
-    padding: .95rem .5rem;
-    border-radius: .75rem;
+    width: 100%;
+    padding: 0.8rem 0.9rem;
+    border-radius: 0.9rem;
   }
 
-  .toc-list a:hover,
-  .toc-list a:focus-visible {
-    background: color-mix(in srgb, var(--accent-soft) 74%, transparent);
+  .floating-directory-link:hover,
+  .floating-directory-link:focus-visible {
+    background: color-mix(in srgb, var(--accent-soft) 70%, transparent);
   }
 
-  .toc-index {
+  .floating-directory-link.is-current {
+    background: color-mix(in srgb, var(--accent-soft) 92%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-light));
+  }
+
+  .floating-directory-index {
+    min-width: 1.75rem;
     color: var(--text-tertiary);
-    font-size: .8rem;
-    padding-top: .15rem;
+    font-size: 0.78rem;
+    line-height: 1.6;
   }
 
-  .toc-title {
-    line-height: 1.5;
+  .floating-directory-copy {
+    min-width: 0;
+  }
+
+  .floating-directory-item-title {
+    display: block;
+    line-height: 1.45;
     color: var(--text-primary);
+    word-break: break-word;
   }
 
-  @supports (bottom: env(safe-area-inset-bottom)) {
-    .toc-fab {
-      bottom: calc(1rem + env(safe-area-inset-bottom));
-    }
+  .floating-directory-item-meta {
+    display: block;
+    margin-top: 0.14rem;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .floating-directory-empty {
+    padding: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
   }
 
   @media (max-width: 720px) {
-    .toc-fab {
-      right: .9rem;
-      bottom: .9rem;
-      height: 2.85rem;
-      min-width: 2.85rem;
-      padding: 0 .72rem;
+    .floating-directory-shell {
+      right: max(0.75rem, env(safe-area-inset-right));
+      bottom: max(0.75rem, env(safe-area-inset-bottom));
     }
 
-    .toc-fab span {
-      font-size: .72rem;
+    .floating-directory-button {
+      min-height: 3rem;
+      padding: 0 0.9rem;
     }
 
-    .toc-panel {
-      width: calc(100vw - .55rem);
+    .floating-directory-panel {
+      width: min(100vw - 1rem, 23rem);
+      max-height: min(78vh, 32rem);
+    }
+
+    .floating-directory-body {
+      max-height: min(62vh, 26rem);
     }
   }
 </style>
 
 <script>
-  const fab = document.getElementById('toc-fab');
-  const panel = document.getElementById('toc-panel');
-  const mask = document.getElementById('toc-mask');
-  const closeBtn = document.getElementById('toc-close');
-  const links = panel?.querySelectorAll('a');
+  // @ts-nocheck
+  const root = document.getElementById('floating-directory-root');
 
-  const setOpen = (open) => {
-    if (!panel || !mask || !fab) return;
-    panel.classList.toggle('is-open', open);
-    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
-    mask.hidden = !open;
-    fab.setAttribute('aria-expanded', open ? 'true' : 'false');
-    document.body.style.overflow = open ? 'hidden' : '';
-  };
+  if (root && !root.dataset.initialized) {
+    root.dataset.initialized = 'true';
 
-  fab?.addEventListener('click', () => setOpen(true));
-  closeBtn?.addEventListener('click', () => setOpen(false));
-  mask?.addEventListener('click', () => setOpen(false));
-  links?.forEach((a) => a.addEventListener('click', () => setOpen(false)));
+    const backdrop = root.querySelector('[data-directory-backdrop]');
+    const shell = root.querySelector('[data-directory-shell]');
+    const panel = root.querySelector('[data-directory-panel]');
+    const button = root.querySelector('[data-directory-button]');
+    const closeButton = root.querySelector('[data-directory-close]');
+    const currentLink = root.querySelector('.floating-directory-link.is-current');
+    const directoryLinks = root.querySelectorAll('.floating-directory-link');
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') setOpen(false);
-  });
+    if (backdrop && shell) {
+      document.body.append(backdrop, shell);
+      root.remove();
+    }
 
-  let timer;
-  const onScroll = () => {
-    if (!fab) return;
-    fab.classList.add('is-scrolling');
-    clearTimeout(timer);
-    timer = setTimeout(() => fab.classList.remove('is-scrolling'), 180);
-  };
-  window.addEventListener('scroll', onScroll, { passive: true });
+    const setOpen = (open) => {
+      if (!backdrop || !panel || !button || !shell) return;
+      if (shell.dataset.hasChapters === 'false') return;
+
+      panel.classList.toggle('is-open', open);
+      panel.setAttribute('aria-hidden', String(!open));
+      button.setAttribute('aria-expanded', String(open));
+      backdrop.classList.toggle('is-open', open);
+      backdrop.hidden = !open;
+      document.body.classList.toggle('directory-panel-open', open);
+
+      if (open) {
+        closeButton?.focus();
+        currentLink?.scrollIntoView({ block: 'nearest' });
+      }
+    };
+
+    button?.addEventListener('click', () => {
+      const nextOpen = panel ? !panel.classList.contains('is-open') : false;
+      setOpen(nextOpen);
+    });
+
+    closeButton?.addEventListener('click', () => {
+      setOpen(false);
+      button?.focus();
+    });
+
+    backdrop?.addEventListener('click', () => setOpen(false));
+
+    directoryLinks.forEach((link) => {
+      link.addEventListener('click', () => setOpen(false));
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        button?.focus();
+      }
+    });
+  }
 </script>

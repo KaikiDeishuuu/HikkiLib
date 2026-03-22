@@ -49,8 +49,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </div>
 
   <script>
+    // @ts-nocheck
+    /** @type {NodeListOf<HTMLElement>} */
     const shots = document.querySelectorAll('.shot');
     const lightbox = document.getElementById('lightbox');
+    /** @type {HTMLImageElement | null} */
     const preview = document.getElementById('preview');
     const close = document.getElementById('close');
     const gallery = document.getElementById('gallery');
@@ -80,11 +83,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     shots.forEach((s) => s.addEventListener('click', (e) => {
       if (dragged) { e.preventDefault(); return; }
-      preview.src = s.dataset.src;
+      const src = s.dataset.src;
+      if (!src || !preview || !lightbox) return;
+      preview.src = src;
       lightbox.classList.add('show');
       lightbox.setAttribute('aria-hidden', 'false');
     }));
     const hide = () => {
+      if (!lightbox || !preview) return;
       lightbox.classList.remove('show');
       lightbox.setAttribute('aria-hidden', 'true');
       preview.src = '';

@@ -59,7 +59,7 @@ const { Content } = await chapter.render();
   prevTitle={prevTitle}
   nextTitle={nextTitle}
 >
-  <TOCDrawer slot="floating" bookId={book.id} />
+  <TOCDrawer slot="floating" bookId={book.id} currentChapterSlug={chapter.slug} />
   <h1>{chapter.data.title}</h1>
   <Content />
 </ReaderLayout>
