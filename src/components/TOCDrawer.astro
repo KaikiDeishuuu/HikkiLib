@@ -77,14 +77,18 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
     border-color: color-mix(in srgb, var(--accent) 24%, var(--border-light));
   }
 
+  .toc-trigger.scrolling {
+    opacity: .48;
+  }
+
   .toc-drawer {
     position: fixed;
     inset: 0 auto 0 0;
     width: min(24rem, calc(100vw - 2rem));
     padding: 1rem;
-    transform: translateX(calc(-100% - 1rem));
+    transform: translate3d(calc(-100% - 1rem), 0, 0);
     transition: transform 180ms ease-out;
-    z-index: 110;
+    z-index: 160;
   }
 
   .toc-drawer::before {
@@ -100,7 +104,7 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
   }
 
   .toc-drawer.open {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   .toc-overlay {
@@ -110,7 +114,7 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
     opacity: 0;
     pointer-events: none;
     transition: opacity 180ms ease-out;
-    z-index: 100;
+    z-index: 150;
   }
 
   .toc-overlay.open {
@@ -234,6 +238,7 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
   const overlay = document.getElementById('toc-overlay');
   const openBtn = document.getElementById('open-toc');
   const closeBtn = document.getElementById('close-toc');
+  const links = drawer?.querySelectorAll('a');
 
   const setTOCState = (isOpen) => {
     drawer?.classList.toggle('open', isOpen);
@@ -244,10 +249,18 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
   openBtn?.addEventListener('click', () => setTOCState(true));
   closeBtn?.addEventListener('click', () => setTOCState(false));
   overlay?.addEventListener('click', () => setTOCState(false));
+  links?.forEach((a) => a.addEventListener('click', () => setTOCState(false)));
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      setTOCState(false);
-    }
+    if (event.key === 'Escape') setTOCState(false);
   });
+
+  let fadeTimer;
+  const onScroll = () => {
+    if (!openBtn) return;
+    openBtn.classList.add('scrolling');
+    clearTimeout(fadeTimer);
+    fadeTimer = setTimeout(() => openBtn.classList.remove('scrolling'), 180);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
 </script>

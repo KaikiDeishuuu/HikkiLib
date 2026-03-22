@@ -150,6 +150,8 @@ const { title, description, prevUrl, nextUrl, prevTitle = '返回目录', nextTi
       </article>
     </div>
 
+    <slot name="floating" />
+
     <nav class="reader-nav" aria-label="Chapter Navigation">
       {prevUrl ? (
         <a href={prevUrl} rel="prefetch" class="reader-link">
