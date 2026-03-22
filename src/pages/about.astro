@@ -96,19 +96,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <style>
-  .about { padding: var(--space-8) 0 var(--space-9); display: grid; gap: var(--space-5); }
-  .about-head { max-width: 44rem; display:grid; gap:.6rem; }
+  .about { padding: var(--space-8) 0 var(--space-9); display: grid; gap: var(--space-5); width: 100%; margin-inline: auto; overflow-x: clip; }
+  .about-head { max-width: 44rem; width: 100%; display:grid; gap:.6rem; }
   .about-head h1 { margin:0; font-size: clamp(2.35rem, 6vw, 4rem); letter-spacing: -0.05em; }
   .lead { margin:0; color: var(--text-secondary); }
-  .panel { padding: clamp(1rem,2.6vw,1.6rem); }
+  .panel { padding: clamp(1rem,2.6vw,1.6rem); max-width: 100%; overflow: hidden; }
   .panel h2 { margin: 0 0 .7rem; letter-spacing: -0.02em; }
   .panel p { margin: 0 0 .7rem; line-height: 1.9; }
   blockquote { margin: .8rem 0 0; padding: .7rem .85rem; border-left: 3px solid var(--border-strong); background: var(--accent-soft); border-radius: .6rem; }
 
   .gallery-tip { margin: 0 0 .55rem; color: var(--text-tertiary); font-size: .86rem; }
-  .gallery { display:flex; gap:.65rem; overflow-x:auto; padding-bottom:.35rem; cursor: grab; user-select:none; }
+  .gallery { display:flex; gap:.65rem; max-width:100%; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; padding-bottom:.35rem; cursor: grab; user-select:none; }
   .gallery.dragging { cursor: grabbing; }
-  .shot { flex:0 0 min(68vw,220px); aspect-ratio: 3/4; border-radius: 12px; border:1px solid var(--border-light); background:#f2f3f6 center/cover no-repeat; cursor: zoom-in; }
+  .shot { flex: 0 0 clamp(160px, 68vw, 220px); aspect-ratio: 3/4; border-radius: 12px; border:1px solid var(--border-light); background:#f2f3f6 center/cover no-repeat; cursor: zoom-in; }
   .shot:nth-child(1){background-image:url('/assets/photo1.jpg')}
   .shot:nth-child(2){background-image:url('/assets/photo2.jpg')}
   .shot:nth-child(3){background-image:url('/assets/photo3.jpg')}
