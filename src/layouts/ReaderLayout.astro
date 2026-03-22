@@ -24,7 +24,7 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
       inset: var(--nav-height) 0 auto;
       height: 1px;
       background: color-mix(in srgb, var(--border-light) 55%, transparent);
-      z-index: 70;
+      z-index: 12;
       pointer-events: none;
     }
 
@@ -39,7 +39,7 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
 
     .reader-head {
       position: sticky;
-      top: calc(var(--nav-height) + 0.5rem);
+      top: calc(var(--nav-height) + 0.85rem);
       z-index: 20;
       width: min(calc(100% - 2rem), var(--wide-max-width));
       margin: 0 auto var(--space-6);
@@ -149,7 +149,7 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
       }
 
       .reader-head {
-        top: calc(var(--nav-height) + 0.35rem);
+        top: calc(var(--nav-height) + 0.7rem);
         margin-bottom: var(--space-5);
         flex-direction: row;
         align-items: center;
