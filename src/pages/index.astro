@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const books = await getCollection('books');
+---
+
+<BaseLayout title="HikkiLib Library">
+  <main class="library-container">
+    <header class="library-header">
+      <h1>HikkiLib</h1>
+      <p>A meticulous reading experience.</p>
+    </header>
+
+    <div class="book-grid">
+      {books.map(book => (
+        <a href={`/${book.id}`} class="book-card">
+          <h2>{book.data.title}</h2>
+          <p class="author">{book.data.author}</p>
+          <p class="desc">{book.data.description}</p>
+        </a>
+      ))}
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .library-container {
+    max-width: var(--content-max-width, 42em);
+    margin: 4rem auto;
+    padding: 0 1rem;
+  }
+  .library-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+  .library-header h1 {
+    font-size: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+  .library-header p {
+    color: var(--text-secondary);
+  }
+  .book-grid {
+    display: grid;
+    gap: 2rem;
+  }
+  .book-card {
+    display: block;
+    padding: 2rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .book-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  [data-theme="dark"] .book-card:hover {
+    box-shadow: 0 4px 12px rgba(255,255,255,0.05);
+  }
+  .book-card h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+  }
+  .book-card .author {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .book-card .desc {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0;
+  }
+</style>

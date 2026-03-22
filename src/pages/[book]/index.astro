@@ -1,0 +1,137 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const books = await getCollection('books');
+  return books.map(book => ({
+    params: { book: book.id },
+    props: { book },
+  }));
+}
+
+const { book } = Astro.props;
+const chapters = await getCollection('chapters', ({ data }) => {
+  return data.bookId === book.id;
+});
+
+// Sort chapters numerically
+chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
+---
+
+<BaseLayout title={`${book.data.title} - HikkiLib`} description={book.data.description}>
+  <main class="book-container">
+    <header class="book-header">
+      <a href="/" class="back-link">← 返回书架 (Back to Library)</a>
+      <h1>{book.data.title}</h1>
+      <p class="author">{book.data.author}</p>
+      
+      <div class="tags">
+        {book.data.tags.map((t: string) => <span class="tag">{t}</span>)}
+      </div>
+
+      <p class="desc">{book.data.description}</p>
+      
+      {chapters.length > 0 && (
+        <a href={`/${book.id}/${chapters[0].slug}`} class="start-reading">
+          开始阅读 (Start Reading)
+        </a>
+      )}
+    </header>
+
+    <section class="toc">
+      <h2>目录 (Table of Contents)</h2>
+      <ul class="chapter-list">
+        {chapters.map(chapter => (
+          <li>
+            <a href={`/${book.id}/${chapter.slug}`}>
+              <span class="chap-num">{chapter.data.chapterNumber}.</span>
+              <span class="chap-title">{chapter.data.title}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .book-container {
+    max-width: var(--content-max-width, 42em);
+    margin: 4rem auto;
+    padding: 0 1rem;
+  }
+  .back-link {
+    display: inline-block;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+  }
+  .book-header h1 {
+    font-size: 2.5rem;
+    margin: 0 0 0.5rem 0;
+  }
+  .author {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+  .tags {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .tag {
+    background: var(--border-light);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+  }
+  .desc {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+  .start-reading {
+    display: inline-block;
+    background: var(--accent, #0066CC);
+    color: #fff;
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    transition: opacity 0.2s;
+  }
+  .start-reading:hover {
+    opacity: 0.9;
+  }
+  
+  .toc {
+    margin-top: 4rem;
+    border-top: 1px solid var(--border-light);
+    padding-top: 2rem;
+  }
+  .toc h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .chapter-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .chapter-list li {
+    border-bottom: 1px solid var(--border-light);
+  }
+  .chapter-list a {
+    display: flex;
+    padding: 1rem 0;
+    transition: color 0.2s;
+  }
+  .chapter-list a:hover {
+    color: var(--accent, #0066CC);
+  }
+  .chap-num {
+    width: 3rem;
+    color: var(--text-secondary);
+  }
+</style>

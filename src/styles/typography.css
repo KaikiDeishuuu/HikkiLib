@@ -1,0 +1,41 @@
+/* typography.css - Shared typography rules optimized for Chinese long-form reading */
+
+article.reader-content {
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-serif: "Songti SC", "STSong", "Noto Serif SC", serif;
+  
+  font-family: var(--font-serif);
+  font-size: 1.1rem; /* Slightly larger than base for easier reading */
+  
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 0 1rem;
+  
+  line-height: 1.9;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
+article.reader-content p {
+  margin-block-start: 1.5em;
+  margin-block-end: 1.5em;
+  text-indent: 2em;
+}
+
+article.reader-content h1, 
+article.reader-content h2, 
+article.reader-content h3 {
+  font-family: var(--font-sans);
+  text-align: left;
+  text-indent: 0;
+  margin-top: 2em;
+  margin-bottom: 1em;
+  font-weight: 600;
+}
+
+article.reader-content h1 {
+  font-size: 2rem;
+  margin-top: 0;
+  margin-bottom: 2em;
+  text-align: center;
+}

@@ -1,0 +1,135 @@
+---
+import { getCollection } from 'astro:content';
+
+interface Props {
+  bookId: string;
+}
+
+const { bookId } = Astro.props;
+const chapters = await getCollection('chapters', ({ data }) => data.bookId === bookId);
+chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
+---
+<div class="toc-drawer" id="toc-drawer">
+  <div class="toc-header">
+    <h3>目录</h3>
+    <button id="close-toc" aria-label="Close Table of Contents">✕</button>
+  </div>
+  <ul class="toc-list">
+    {chapters.map(ch => (
+      <li>
+        <a href={`/${bookId}/${ch.slug}`}>{ch.data.title}</a>
+      </li>
+    ))}
+  </ul>
+</div>
+<div class="toc-overlay" id="toc-overlay"></div>
+
+<button id="open-toc" class="toc-trigger" aria-label="Open Table of Contents">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+</button>
+
+<style>
+  .toc-trigger {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 40;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .toc-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 300px;
+    max-width: 80vw;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-right: 1px solid var(--border-light);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 200;
+    overflow-y: auto;
+  }
+  .toc-drawer.open {
+    transform: translateX(0);
+  }
+  .toc-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 150;
+  }
+  .toc-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .toc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .toc-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  #close-toc {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .toc-list li {
+    border-bottom: 1px solid var(--border-light);
+  }
+  .toc-list a {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .toc-list a:hover {
+    background: var(--border-light);
+  }
+</style>
+
+<script>
+  const drawer = document.getElementById('toc-drawer');
+  const overlay = document.getElementById('toc-overlay');
+  const openBtn = document.getElementById('open-toc');
+  const closeBtn = document.getElementById('close-toc');
+
+  const toggleTOC = () => {
+    drawer?.classList.toggle('open');
+    overlay?.classList.toggle('open');
+  };
+
+  openBtn?.addEventListener('click', toggleTOC);
+  closeBtn?.addEventListener('click', toggleTOC);
+  overlay?.addEventListener('click', toggleTOC);
+</script>

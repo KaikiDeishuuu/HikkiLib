@@ -1,0 +1,77 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import '../styles/typography.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  prevUrl?: string;
+  nextUrl?: string;
+}
+
+const { title, description, prevUrl, nextUrl } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} type="article">
+  <style>
+    .reader-container {
+      position: relative;
+      padding-top: 4rem; /* Leave space for top nav */
+      padding-bottom: 6rem;
+    }
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: var(--accent, #0066CC);
+      transform-origin: left;
+      transform: scaleX(var(--scroll-progress, 0));
+      z-index: 50;
+      transition: transform 0.1s ease-out;
+    }
+    .reader-nav {
+      max-width: var(--content-max-width, 42em);
+      margin: 4rem auto 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 1rem;
+    }
+    .reader-nav a {
+      color: var(--accent, #0066CC);
+      font-family: var(--font-sans, sans-serif);
+      text-decoration: none;
+      font-size: 1.1rem;
+    }
+    .reader-nav a:hover {
+      text-decoration: underline;
+    }
+  </style>
+
+  <div class="progress-bar" id="reading-progress"></div>
+
+  <div class="reader-container">
+    <article class="reader-content">
+      <slot />
+    </article>
+
+    <nav class="reader-nav">
+      {prevUrl ? <a href={prevUrl} rel="prefetch">← 上一章 (Prev)</a> : <span></span>}
+      {nextUrl ? <a href={nextUrl} rel="prefetch">下一章 (Next) →</a> : <span></span>}
+    </nav>
+  </div>
+
+  <script>
+    const updateProgress = () => {
+      const scrollY = window.scrollY;
+      const height = document.body.scrollHeight - window.innerHeight;
+      const progress = height > 0 ? scrollY / height : 0;
+      document.documentElement.style.setProperty('--scroll-progress', progress.toString());
+    };
+
+    window.addEventListener('scroll', () => {
+      requestAnimationFrame(updateProgress);
+    }, { passive: true });
+  </script>
+</BaseLayout>

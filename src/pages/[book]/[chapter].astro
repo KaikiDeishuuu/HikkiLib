@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import ReaderLayout from '../../layouts/ReaderLayout.astro';
+import TOCDrawer from '../../components/TOCDrawer.astro';
+
+export async function getStaticPaths() {
+  const chapters = await getCollection('chapters');
+  const books = await getCollection('books');
+  
+  const bookMap = new Map();
+  for (const b of books) {
+    bookMap.set(b.id, b);
+  }
+  
+  const chaptersByBook: Record<string, any[]> = {};
+  for (const ch of chapters) {
+    if (!chaptersByBook[ch.data.bookId]) {
+      chaptersByBook[ch.data.bookId] = [];
+    }
+    chaptersByBook[ch.data.bookId].push(ch);
+  }
+  
+  const paths = [];
+  
+  for (const [bookId, bookChapters] of Object.entries(chaptersByBook)) {
+    bookChapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
+    
+    for (let i = 0; i < bookChapters.length; i++) {
+      const chapter = bookChapters[i];
+      const prev = i > 0 ? bookChapters[i - 1] : null;
+      const next = i < bookChapters.length - 1 ? bookChapters[i + 1] : null;
+      
+      paths.push({
+        params: { book: bookId, chapter: chapter.slug },
+        props: { 
+          chapter, 
+          book: bookMap.get(bookId),
+          prevUrl: prev ? `/${bookId}/${prev.slug}` : `/${bookId}/`,
+          nextUrl: next ? `/${bookId}/${next.slug}` : `/${bookId}/`
+        },
+      });
+    }
+  }
+  
+  return paths;
+}
+
+const { chapter, book, prevUrl, nextUrl } = Astro.props;
+const { Content } = await chapter.render();
+---
+
+<ReaderLayout 
+  title={`${chapter.data.title} - ${book?.data.title || ''}`} 
+  description={`Reading chapter: ${chapter.data.title}`}
+  prevUrl={prevUrl}
+  nextUrl={nextUrl}
+>
+  <TOCDrawer bookId={book.id} />
+  <h1>{chapter.data.title}</h1>
+  <Content />
+</ReaderLayout>
