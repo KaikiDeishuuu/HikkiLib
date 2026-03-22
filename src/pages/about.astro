@@ -96,11 +96,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <style>
-  .about { padding: var(--space-8) 0 var(--space-9); display: grid; gap: var(--space-5); width: 100%; margin-inline: auto; overflow-x: clip; }
-  .about-head { max-width: 44rem; width: 100%; display:grid; gap:.6rem; }
+  .about { padding: var(--space-8) 0 var(--space-9); display: grid; gap: var(--space-5); width: min(100%, 56rem); margin-inline: auto; overflow-x: clip; }
+  .about-head { max-width: 40rem; width: 100%; display:grid; gap:.6rem; }
   .about-head h1 { margin:0; font-size: clamp(2.35rem, 6vw, 4rem); letter-spacing: -0.05em; }
   .lead { margin:0; color: var(--text-secondary); }
-  .panel { padding: clamp(1rem,2.6vw,1.6rem); max-width: 100%; overflow: hidden; }
+  .panel { padding: clamp(.95rem,2.2vw,1.35rem); max-width: 100%; overflow: hidden; }
   .panel h2 { margin: 0 0 .7rem; letter-spacing: -0.02em; }
   .panel p { margin: 0 0 .7rem; line-height: 1.9; }
   blockquote { margin: .8rem 0 0; padding: .7rem .85rem; border-left: 3px solid var(--border-strong); background: var(--accent-soft); border-radius: .6rem; }
@@ -123,5 +123,5 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .lightbox img { max-width:min(100%,980px); max-height:88vh; border-radius: 10px; box-shadow: 0 18px 45px rgba(0,0,0,.45); }
   #close { position:absolute; top:1rem; right:1rem; border:1px solid rgba(255,255,255,.4); color:#fff; border-radius: 999px; padding: .4rem .7rem; background: rgba(22,22,22,.4); }
 
-  @media (max-width: 720px) { .about { padding: var(--space-7) 0 var(--space-8);} .shot{flex-basis:76vw;} }
+  @media (max-width: 720px) { .about { width: 100%; padding: var(--space-7) 0 var(--space-8);} .shot{flex-basis:76vw;} }
 </style>
