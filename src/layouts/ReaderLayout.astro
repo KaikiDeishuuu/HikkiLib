@@ -7,9 +7,11 @@ interface Props {
   description?: string;
   prevUrl?: string;
   nextUrl?: string;
+  prevTitle?: string;
+  nextTitle?: string;
 }
 
-const { title, description, prevUrl, nextUrl } = Astro.props;
+const { title, description, prevUrl, nextUrl, prevTitle = '返回目录', nextTitle = '返回目录' } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description} type="article">
@@ -20,14 +22,15 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
     }
 
     .progress-wrap {
-      position: sticky;
+      position: fixed;
       top: var(--nav-height);
+      left: 50%;
+      transform: translateX(-50%);
       height: 1px;
       background: color-mix(in srgb, var(--border-light) 55%, transparent);
       z-index: 11;
       pointer-events: none;
       width: min(calc(100% - 2rem), calc(var(--content-max-width) + 5rem));
-      margin: 0 auto;
     }
 
     .progress-bar {
@@ -151,14 +154,14 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
       {prevUrl ? (
         <a href={prevUrl} rel="prefetch" class="reader-link">
           <span class="reader-link-label">Previous</span>
-          <span class="reader-link-title">← 上一章 / 返回目录</span>
+          <span class="reader-link-title">← {prevTitle}</span>
         </a>
       ) : <div class="reader-link-placeholder" aria-hidden="true"></div>}
 
       {nextUrl ? (
         <a href={nextUrl} rel="prefetch" class="reader-link next">
           <span class="reader-link-label">Next</span>
-          <span class="reader-link-title">下一章 / 返回目录 →</span>
+          <span class="reader-link-title">{nextTitle} →</span>
         </a>
       ) : <div class="reader-link-placeholder" aria-hidden="true"></div>}
     </nav>

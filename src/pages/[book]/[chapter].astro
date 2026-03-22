@@ -36,7 +36,9 @@ export async function getStaticPaths() {
           chapter, 
           book: bookMap.get(bookId),
           prevUrl: prev ? `/${bookId}/${prev.slug}` : `/${bookId}/`,
-          nextUrl: next ? `/${bookId}/${next.slug}` : `/${bookId}/`
+          nextUrl: next ? `/${bookId}/${next.slug}` : `/${bookId}/`,
+          prevTitle: prev ? prev.data.title : '返回目录',
+          nextTitle: next ? next.data.title : '返回目录'
         },
       });
     }
@@ -45,7 +47,7 @@ export async function getStaticPaths() {
   return paths;
 }
 
-const { chapter, book, prevUrl, nextUrl } = Astro.props;
+const { chapter, book, prevUrl, nextUrl, prevTitle, nextTitle } = Astro.props;
 const { Content } = await chapter.render();
 ---
 
@@ -54,6 +56,8 @@ const { Content } = await chapter.render();
   description={`Reading chapter: ${chapter.data.title}`}
   prevUrl={prevUrl}
   nextUrl={nextUrl}
+  prevTitle={prevTitle}
+  nextTitle={nextTitle}
 >
   <TOCDrawer bookId={book.id} />
   <h1>{chapter.data.title}</h1>

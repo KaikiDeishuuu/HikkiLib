@@ -150,17 +150,12 @@ a {
   -webkit-backdrop-filter: blur(18px);
   background: color-mix(in srgb, var(--bg-primary) 74%, transparent);
   border-bottom: 1px solid transparent;
-  transform: translateY(0);
-  transition: background-color var(--transition-theme), border-color var(--transition-quick), transform 180ms ease-out;
+  transition: background-color var(--transition-theme), border-color var(--transition-quick);
 }
 
 .site-header.is-scrolled {
   background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
   border-bottom-color: var(--border-light);
-}
-
-.site-header.is-hidden {
-  transform: translateY(-102%);
 }
 
 .site-header::after {
@@ -304,10 +299,6 @@ a {
 
   .site-brand-copy {
     display: none;
-  }
-
-  .site-header.is-hidden {
-    transform: translateY(-98%);
   }
 }
 

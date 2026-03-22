@@ -77,18 +77,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'http://localhost
 
     <script is:inline>
       const header = document.getElementById('site-header');
-      let lastY = window.scrollY;
       let ticking = false;
       const updateHeader = () => {
         const y = window.scrollY;
         header?.classList.toggle('is-scrolled', y > 12);
-        if (window.innerWidth < 860) {
-          const hide = y > lastY && y > 88;
-          header?.classList.toggle('is-hidden', hide);
-        } else {
-          header?.classList.remove('is-hidden');
-        }
-        lastY = y;
+        header?.classList.remove('is-hidden');
         ticking = false;
       };
       window.addEventListener('scroll', () => {
