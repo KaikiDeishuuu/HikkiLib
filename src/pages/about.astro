@@ -21,6 +21,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     <section class="panel editorial-panel">
       <h2>一些关于我的画面</h2>
+      <p class="gallery-tip">按住画面左右拖动，或点击查看大图</p>
       <div class="gallery" id="gallery">
         {Array.from({ length: 8 }).map((_, i) => (
           <button class="shot" data-src={`/assets/photo${i + 1}.jpg`} aria-label={`photo ${i + 1}`} />
@@ -52,7 +53,33 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const lightbox = document.getElementById('lightbox');
     const preview = document.getElementById('preview');
     const close = document.getElementById('close');
-    shots.forEach((s) => s.addEventListener('click', () => {
+    const gallery = document.getElementById('gallery');
+    let isDown = false;
+    let startX = 0;
+    let startScroll = 0;
+    let dragged = false;
+
+    gallery?.addEventListener('pointerdown', (e) => {
+      isDown = true;
+      dragged = false;
+      gallery.setPointerCapture?.(e.pointerId);
+      startX = e.clientX;
+      startScroll = gallery.scrollLeft;
+      gallery.classList.add('dragging');
+    });
+    gallery?.addEventListener('pointermove', (e) => {
+      if (!isDown) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 5) dragged = true;
+      gallery.scrollLeft = startScroll - dx;
+    });
+    const stopDrag = () => { isDown = false; gallery?.classList.remove('dragging'); };
+    gallery?.addEventListener('pointerup', stopDrag);
+    gallery?.addEventListener('pointercancel', stopDrag);
+    gallery?.addEventListener('pointerleave', stopDrag);
+
+    shots.forEach((s) => s.addEventListener('click', (e) => {
+      if (dragged) { e.preventDefault(); return; }
       preview.src = s.dataset.src;
       lightbox.classList.add('show');
       lightbox.setAttribute('aria-hidden', 'false');
@@ -78,7 +105,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .panel p { margin: 0 0 .7rem; line-height: 1.9; }
   blockquote { margin: .8rem 0 0; padding: .7rem .85rem; border-left: 3px solid var(--border-strong); background: var(--accent-soft); border-radius: .6rem; }
 
-  .gallery { display:flex; gap:.65rem; overflow-x:auto; padding-bottom:.35rem; }
+  .gallery-tip { margin: 0 0 .55rem; color: var(--text-tertiary); font-size: .86rem; }
+  .gallery { display:flex; gap:.65rem; overflow-x:auto; padding-bottom:.35rem; cursor: grab; user-select:none; }
+  .gallery.dragging { cursor: grabbing; }
   .shot { flex:0 0 min(68vw,220px); aspect-ratio: 3/4; border-radius: 12px; border:1px solid var(--border-light); background:#f2f3f6 center/cover no-repeat; cursor: zoom-in; }
   .shot:nth-child(1){background-image:url('/assets/photo1.jpg')}
   .shot:nth-child(2){background-image:url('/assets/photo2.jpg')}

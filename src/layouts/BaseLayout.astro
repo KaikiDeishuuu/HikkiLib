@@ -57,7 +57,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'http://localhost
   </head>
   <body>
     <div class="site-shell">
-      <header class="site-header">
+      <header class="site-header" id="site-header">
         <div class="site-header-inner">
           <a href="/" class="site-brand" aria-label="Hikki Library Home">
             <span class="site-brand-mark">Hikki Library</span>
@@ -74,5 +74,31 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'http://localhost
         <slot />
       </main>
     </div>
+
+    <script is:inline>
+      const header = document.getElementById('site-header');
+      let lastY = window.scrollY;
+      let ticking = false;
+      const updateHeader = () => {
+        const y = window.scrollY;
+        header?.classList.toggle('is-scrolled', y > 12);
+        if (window.innerWidth < 860) {
+          const hide = y > lastY && y > 88;
+          header?.classList.toggle('is-hidden', hide);
+        } else {
+          header?.classList.remove('is-hidden');
+        }
+        lastY = y;
+        ticking = false;
+      };
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          requestAnimationFrame(updateHeader);
+          ticking = true;
+        }
+      }, { passive: true });
+      window.addEventListener('resize', updateHeader);
+      updateHeader();
+    </script>
   </body>
 </html>
