@@ -1,244 +1,541 @@
----
-import { getCollection } from 'astro:content';
-
-interface Props {
-  bookId: string;
-}
-
-const { bookId } = Astro.props;
-const chapters = await getCollection('chapters', ({ data }) => data.bookId === bookId);
-chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
----
-
-<button id="toc-fab" class="toc-fab" type="button" aria-label="打开目录" aria-controls="toc-panel" aria-expanded="false">
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <line x1="3" y1="6" x2="21" y2="6"></line>
-    <line x1="3" y1="12" x2="21" y2="12"></line>
-    <line x1="3" y1="18" x2="21" y2="18"></line>
-  </svg>
-  <span>目录</span>
-</button>
-
-<div id="toc-mask" class="toc-mask" hidden></div>
-
-<aside id="toc-panel" class="toc-panel" aria-hidden="true">
-  <div class="toc-panel-head">
-    <div>
-      <p class="toc-kicker">Contents</p>
-      <h3>目录</h3>
-    </div>
-    <button id="toc-close" type="button" aria-label="关闭目录">✕</button>
-  </div>
-
-  <ul class="toc-list">
-    {chapters.map((ch) => (
-      <li>
-        <a href={`/${bookId}/${ch.slug}`}>
-          <span class="toc-index">{ch.data.isAppendix ? '附录' : String(ch.data.chapterNumber).padStart(2, '0')}</span>
-          <span class="toc-title">{ch.data.title}</span>
-        </a>
-      </li>
-    ))}
-  </ul>
-</aside>
+<div id="floating-toc-root" aria-hidden="true"></div>
 
 <style>
-  .toc-fab {
-    position: fixed !important;
-    right: 1rem;
-    bottom: 1rem;
-    z-index: 250;
-    height: 2.95rem;
-    min-width: 2.95rem;
-    padding: 0 .8rem;
-    border-radius: 999px;
+  :global(body.toc-panel-open) {
+    overflow: hidden;
+  }
+
+  :global(.floating-toc-shell) {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 400;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+    pointer-events: none;
+  }
+
+  :global(.floating-toc-shell[data-visible='false']) {
+    display: none;
+  }
+
+  :global(.floating-toc-backdrop) {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.32);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-quick);
+    z-index: 398;
+  }
+
+  :global(.floating-toc-backdrop[data-open='true']) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  :global(.floating-toc-panel) {
+    width: min(22rem, calc(100vw - 1.5rem));
+    max-height: min(70vh, 34rem);
+    overflow: hidden;
+    border-radius: 1.25rem;
     border: 1px solid var(--border-light);
-    background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
-    color: var(--text-primary);
+    background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(0.75rem) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity var(--transition-quick), transform var(--transition-quick), visibility var(--transition-quick);
+    pointer-events: auto;
+  }
+
+  :global(.floating-toc-panel[data-open='true']) {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  :global(.floating-toc-button) {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: .38rem;
+    gap: 0.5rem;
+    min-height: 3.2rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-light);
+    background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+    color: var(--text-primary);
     box-shadow: var(--shadow-card);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    transition: opacity 140ms ease-out, transform 140ms ease-out, border-color 140ms ease-out;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    pointer-events: auto;
+    cursor: pointer;
   }
 
-  .toc-fab span {
-    font-size: .76rem;
-    color: var(--text-secondary);
-    white-space: nowrap;
-  }
-
-  .toc-fab:hover,
-  .toc-fab:focus-visible {
+  :global(.floating-toc-button:hover),
+  :global(.floating-toc-button:focus-visible) {
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--accent) 28%, var(--border-light));
   }
 
-  .toc-fab.is-scrolling {
-    opacity: .5;
+  :global(.floating-toc-button-label) {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    white-space: nowrap;
   }
 
-  .toc-mask {
-    position: fixed;
-    inset: 0;
-    z-index: 240;
-    background: rgba(0,0,0,.28);
-  }
-
-  .toc-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 260;
-    width: min(24rem, calc(100vw - 1.2rem));
-    background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
-    border-right: 1px solid var(--border-light);
-    box-shadow: 0 14px 40px rgba(0,0,0,.2);
-    transform: translateX(-102%);
-    transition: transform 170ms ease-out;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .toc-panel.is-open {
-    transform: translateX(0);
-  }
-
-  .toc-panel-head {
-    padding: .95rem .9rem .75rem;
+  :global(.floating-toc-panel-header) {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: .6rem;
+    gap: 0.75rem;
+    padding: 1rem 1rem 0.8rem;
     border-bottom: 1px solid var(--border-light);
   }
 
-  .toc-kicker {
-    margin: 0 0 .22rem;
+  :global(.floating-toc-kicker) {
+    margin: 0 0 0.25rem;
     color: var(--text-tertiary);
-    font-size: .7rem;
-    letter-spacing: .12em;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 
-  .toc-panel-head h3 {
-    margin: 0;
-    font-size: 1.15rem;
-    letter-spacing: -.02em;
+  :global(.floating-toc-title-row) {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    flex-wrap: wrap;
   }
 
-  #toc-close {
-    width: 2.2rem;
-    height: 2.2rem;
+  :global(.floating-toc-title-row h2) {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.2;
+    font-family: var(--font-sans);
+  }
+
+  :global(.floating-toc-count) {
+    color: var(--text-tertiary);
+    font-size: 0.82rem;
+  }
+
+  :global(.floating-toc-close) {
+    width: 2.25rem;
+    height: 2.25rem;
     border-radius: 999px;
     display: grid;
     place-items: center;
     color: var(--text-secondary);
+    cursor: pointer;
   }
 
-  #toc-close:hover,
-  #toc-close:focus-visible {
+  :global(.floating-toc-close:hover),
+  :global(.floating-toc-close:focus-visible) {
     background: var(--accent-soft);
     color: var(--text-primary);
   }
 
-  .toc-list {
-    margin: 0;
-    padding: .35rem .45rem .75rem;
+  :global(.floating-toc-list) {
     list-style: none;
-    overflow-y: auto;
-    flex: 1;
+    margin: 0;
+    padding: 0.6rem;
+    max-height: min(52vh, 28rem);
+    overflow: auto;
   }
 
-  .toc-list li + li {
-    border-top: 1px solid var(--border-light);
+  :global(.floating-toc-item) {
+    margin: 0;
   }
 
-  .toc-list a {
+  :global(.floating-toc-link) {
+    width: 100%;
+    border-radius: 0.9rem;
+    padding: 0.75rem 0.85rem;
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: .75rem;
+    gap: 0.7rem;
     align-items: start;
-    padding: .95rem .5rem;
-    border-radius: .75rem;
+    text-align: left;
+    cursor: pointer;
   }
 
-  .toc-list a:hover,
-  .toc-list a:focus-visible {
-    background: color-mix(in srgb, var(--accent-soft) 74%, transparent);
+  :global(.floating-toc-link:hover),
+  :global(.floating-toc-link:focus-visible) {
+    background: color-mix(in srgb, var(--accent-soft) 70%, transparent);
   }
 
-  .toc-index {
-    color: var(--text-tertiary);
-    font-size: .8rem;
-    padding-top: .15rem;
-  }
-
-  .toc-title {
-    line-height: 1.5;
+  :global(.floating-toc-link[data-active='true']) {
+    background: color-mix(in srgb, var(--accent-soft) 90%, transparent);
     color: var(--text-primary);
   }
 
-  @supports (bottom: env(safe-area-inset-bottom)) {
-    .toc-fab {
-      bottom: calc(1rem + env(safe-area-inset-bottom));
-    }
+  :global(.floating-toc-link[data-level='3']) {
+    padding-left: 1.5rem;
+  }
+
+  :global(.floating-toc-link[data-level='4']) {
+    padding-left: 2.15rem;
+  }
+
+  :global(.floating-toc-item-index) {
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    min-width: 1.6rem;
+  }
+
+  :global(.floating-toc-item-copy) {
+    min-width: 0;
+  }
+
+  :global(.floating-toc-item-title) {
+    display: block;
+    color: inherit;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  :global(.floating-toc-item-meta) {
+    display: block;
+    margin-top: 0.12rem;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  :global(.floating-toc-empty) {
+    padding: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
   }
 
   @media (max-width: 720px) {
-    .toc-fab {
-      right: .9rem;
-      bottom: .9rem;
-      height: 2.85rem;
-      min-width: 2.85rem;
-      padding: 0 .72rem;
+    :global(.floating-toc-shell) {
+      right: max(0.75rem, env(safe-area-inset-right));
+      bottom: max(0.75rem, env(safe-area-inset-bottom));
+      left: auto;
     }
 
-    .toc-fab span {
-      font-size: .72rem;
+    :global(.floating-toc-button) {
+      min-height: 3rem;
+      padding: 0 0.9rem;
     }
 
-    .toc-panel {
-      width: calc(100vw - .55rem);
+    :global(.floating-toc-panel) {
+      width: min(100vw - 1rem, 22rem);
+      max-height: min(76vh, 32rem);
+    }
+
+    :global(.floating-toc-list) {
+      max-height: min(58vh, 26rem);
     }
   }
 </style>
 
 <script>
-  const fab = document.getElementById('toc-fab');
-  const panel = document.getElementById('toc-panel');
-  const mask = document.getElementById('toc-mask');
-  const closeBtn = document.getElementById('toc-close');
-  const links = panel?.querySelectorAll('a');
+  // @ts-nocheck
+  const root = document.getElementById('floating-toc-root');
 
-  const setOpen = (open) => {
-    if (!panel || !mask || !fab) return;
-    panel.classList.toggle('is-open', open);
-    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
-    mask.hidden = !open;
-    fab.setAttribute('aria-expanded', open ? 'true' : 'false');
-    document.body.style.overflow = open ? 'hidden' : '';
-  };
+  if (root && !root.dataset.initialized) {
+    root.dataset.initialized = 'true';
 
-  fab?.addEventListener('click', () => setOpen(true));
-  closeBtn?.addEventListener('click', () => setOpen(false));
-  mask?.addEventListener('click', () => setOpen(false));
-  links?.forEach((a) => a.addEventListener('click', () => setOpen(false)));
+    const PANEL_ID = 'floating-toc-panel';
+    const BUTTON_ID = 'floating-toc-button';
+    const CONTENT_SELECTOR = 'article.reader-content';
+    const HEADING_SELECTOR = 'h2, h3, h4';
+    const COLLAPSE_ON_SELECT = true;
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') setOpen(false);
-  });
+    const state = {
+      open: false,
+      headings: [],
+      activeId: '',
+      observer: null,
+      mutationObserver: null,
+      observedContent: null,
+      refreshTimer: undefined,
+    };
 
-  let timer;
-  const onScroll = () => {
-    if (!fab) return;
-    fab.classList.add('is-scrolling');
-    clearTimeout(timer);
-    timer = setTimeout(() => fab.classList.remove('is-scrolling'), 180);
-  };
-  window.addEventListener('scroll', onScroll, { passive: true });
+    const backdrop = document.createElement('div');
+    backdrop.className = 'floating-toc-backdrop';
+    backdrop.dataset.open = 'false';
+    backdrop.hidden = true;
+
+    const shell = document.createElement('div');
+    shell.className = 'floating-toc-shell';
+    shell.dataset.visible = 'false';
+
+    shell.innerHTML = `
+      <section class="floating-toc-panel" id="${PANEL_ID}" aria-hidden="true" data-open="false">
+        <header class="floating-toc-panel-header">
+          <div>
+            <p class="floating-toc-kicker">On this page</p>
+            <div class="floating-toc-title-row">
+              <h2>目录</h2>
+              <span class="floating-toc-count" data-toc-count>0 sections</span>
+            </div>
+          </div>
+          <button class="floating-toc-close" type="button" aria-label="关闭目录">✕</button>
+        </header>
+        <div class="floating-toc-body"></div>
+      </section>
+      <button class="floating-toc-button" id="${BUTTON_ID}" type="button" aria-controls="${PANEL_ID}" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <span class="floating-toc-button-label">目录</span>
+      </button>
+    `;
+
+    document.body.append(backdrop, shell);
+
+    const panel = shell.querySelector('.floating-toc-panel');
+    const body = shell.querySelector('.floating-toc-body');
+    const button = shell.querySelector('.floating-toc-button');
+    const closeButton = shell.querySelector('.floating-toc-close');
+    const count = shell.querySelector('[data-toc-count]');
+
+    const slugify = (value) => value
+      .toLowerCase()
+      .trim()
+      .replace(/<[^>]+>/g, '')
+      .replace(/[\u0000-\u001f]/g, '')
+      .replace(/[^\p{Letter}\p{Number}\s-]/gu, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'section';
+
+    const getContent = () => document.querySelector(CONTENT_SELECTOR);
+
+    const escapeHtml = (value) => value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+
+    const getHeadings = () => {
+      const content = getContent();
+      if (!content) return [];
+
+      const seen = new Set();
+      return Array.from(content.querySelectorAll(HEADING_SELECTOR)).flatMap((node) => {
+        if (!(node instanceof HTMLElement)) return [];
+        const level = Number(node.tagName.slice(1));
+        if (level < 2 || level > 4) return [];
+
+        const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!text) return [];
+
+        let id = node.id.trim();
+        const base = slugify(id || text);
+        if (!id || seen.has(id)) {
+          let unique = base;
+          let suffix = 2;
+          while ((document.getElementById(unique) && document.getElementById(unique) !== node) || seen.has(unique)) {
+            unique = `${base}-${suffix++}`;
+          }
+          id = unique;
+          node.id = id;
+        }
+        seen.add(id);
+
+        if (!node.hasAttribute('tabindex')) {
+          node.setAttribute('tabindex', '-1');
+        }
+        node.setAttribute('data-toc-heading', 'true');
+
+        return [{ id, text, level, element: node }];
+      });
+    };
+
+    const setOpen = (open) => {
+      state.open = open && state.headings.length > 0;
+      if (!panel || !button) return;
+
+      panel.dataset.open = String(state.open);
+      panel.setAttribute('aria-hidden', String(!state.open));
+      button.setAttribute('aria-expanded', String(state.open));
+      backdrop.dataset.open = String(state.open);
+      backdrop.hidden = !state.open;
+      document.body.classList.toggle('toc-panel-open', state.open);
+
+      if (state.open) {
+        closeButton?.focus();
+      }
+    };
+
+    const updateActiveStyles = () => {
+      if (!body) return;
+      body.querySelectorAll('.floating-toc-link').forEach((link) => {
+        link.dataset.active = String(link.dataset.targetId === state.activeId);
+      });
+    };
+
+    const scrollToHeading = (id) => {
+      const target = document.getElementById(id);
+      if (!target) return;
+
+      const header = document.getElementById('site-header');
+      const headerHeight = header instanceof HTMLElement ? header.getBoundingClientRect().height : 0;
+      const top = target.getBoundingClientRect().top + window.scrollY - headerHeight - 18;
+      window.history.replaceState({}, '', `#${id}`);
+      window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
+      state.activeId = id;
+      updateActiveStyles();
+
+      if (COLLAPSE_ON_SELECT) {
+        setOpen(false);
+        button?.focus();
+      }
+    };
+
+    const renderHeadings = () => {
+      if (!body || !count) return;
+      count.textContent = `${state.headings.length} section${state.headings.length === 1 ? '' : 's'}`;
+
+      if (state.headings.length === 0) {
+        body.innerHTML = '<p class="floating-toc-empty">当前页面没有可用的小节标题，因此目录按钮会自动隐藏。</p>';
+        shell.dataset.visible = 'false';
+        setOpen(false);
+        return;
+      }
+
+      shell.dataset.visible = 'true';
+      body.innerHTML = `
+        <ol class="floating-toc-list">
+          ${state.headings.map((heading, index) => `
+            <li class="floating-toc-item">
+              <button
+                class="floating-toc-link"
+                type="button"
+                data-target-id="${heading.id}"
+                data-level="${heading.level}"
+                data-active="${heading.id === state.activeId}"
+              >
+                <span class="floating-toc-item-index">${index + 1}</span>
+                <span class="floating-toc-item-copy">
+                  <span class="floating-toc-item-title">${escapeHtml(heading.text)}</span>
+                  <span class="floating-toc-item-meta">H${heading.level}</span>
+                </span>
+              </button>
+            </li>
+          `).join('')}
+        </ol>
+      `;
+
+      body.querySelectorAll('.floating-toc-link').forEach((link) => {
+        link.addEventListener('click', () => {
+          const id = link.dataset.targetId;
+          if (id) scrollToHeading(id);
+        });
+      });
+    };
+
+    const pickActiveHeading = () => {
+      if (state.headings.length === 0) {
+        state.activeId = '';
+        updateActiveStyles();
+        return;
+      }
+
+      const header = document.getElementById('site-header');
+      const headerHeight = header instanceof HTMLElement ? header.getBoundingClientRect().height : 0;
+      const threshold = headerHeight + 32;
+
+      let active = state.headings[0];
+      for (const heading of state.headings) {
+        const rect = heading.element.getBoundingClientRect();
+        if (rect.top - threshold <= 0) {
+          active = heading;
+        } else {
+          break;
+        }
+      }
+
+      const viewportBottom = window.innerHeight + window.scrollY;
+      const documentHeight = document.documentElement.scrollHeight;
+      if (documentHeight - viewportBottom < 8) {
+        active = state.headings[state.headings.length - 1];
+      }
+
+      if (active && active.id !== state.activeId) {
+        state.activeId = active.id;
+        updateActiveStyles();
+      }
+    };
+
+    const refreshObserver = () => {
+      state.observer?.disconnect();
+      if (state.headings.length === 0) return;
+
+      state.observer = new IntersectionObserver(() => {
+        pickActiveHeading();
+      }, {
+        root: null,
+        rootMargin: '-25% 0px -55% 0px',
+        threshold: [0, 0.1, 0.5, 1],
+      });
+
+      state.headings.forEach((heading) => state.observer?.observe(heading.element));
+      pickActiveHeading();
+    };
+
+    const scheduleRefresh = () => {
+      window.clearTimeout(state.refreshTimer);
+      state.refreshTimer = window.setTimeout(refresh, 60);
+    };
+
+    const ensureMutationObserver = () => {
+      const content = getContent();
+      if (!content || state.observedContent === content) return;
+
+      state.mutationObserver?.disconnect();
+      state.mutationObserver = new MutationObserver(scheduleRefresh);
+      state.mutationObserver.observe(content, { childList: true, subtree: true, characterData: true });
+      state.observedContent = content;
+    };
+
+    const refresh = () => {
+      ensureMutationObserver();
+      state.headings = getHeadings();
+      const current = state.headings.find((heading) => heading.id === state.activeId);
+      state.activeId = current ? current.id : (state.headings[0]?.id || '');
+      renderHeadings();
+      refreshObserver();
+
+      if (!state.observedContent) {
+        scheduleRefresh();
+      }
+    };
+
+    button?.addEventListener('click', () => setOpen(!state.open));
+    closeButton?.addEventListener('click', () => {
+      setOpen(false);
+      button?.focus();
+    });
+    backdrop.addEventListener('click', () => setOpen(false));
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        button?.focus();
+      }
+    });
+
+    window.addEventListener('scroll', pickActiveHeading, { passive: true });
+    window.addEventListener('resize', scheduleRefresh, { passive: true });
+    window.addEventListener('hashchange', pickActiveHeading);
+    window.addEventListener('pageshow', scheduleRefresh);
+
+    refresh();
+  }
 </script>
