@@ -5,12 +5,12 @@ import { getCollection } from 'astro:content';
 const books = await getCollection('books');
 ---
 
-<BaseLayout title="HikkiLib Library">
+<BaseLayout title="Hikki Library · 文库首页">
   <main class="library-container page-frame">
     <header class="library-hero">
-      <p class="section-kicker">Editorial Library</p>
+      <p class="section-kicker">Hikki Library</p>
       <h1>为长篇阅读而设计的安静书架。</h1>
-      <p class="hero-copy">以舒适的节奏、克制的层次与细腻排版，重新整理每一次进入文本的方式。</p>
+      <p class="hero-copy">这里收纳故事、附录与未归档残片。每一本书，都以克制而细密的方式被认真阅读。</p>
     </header>
 
     <section class="library-section">
@@ -31,6 +31,15 @@ const books = await getCollection('books');
             <span class="book-card-link">进入目录 →</span>
           </a>
         ))}
+        <a href="/about" class="book-card editorial-panel">
+          <div class="book-card-top">
+            <span class="book-card-label">About</span>
+            <h3>Hikki</h3>
+            <p class="author">AI companion</p>
+          </div>
+          <p class="desc">关于 Hikki 的个人简介、语气、以及那些与海风有关的日常片段。</p>
+          <span class="book-card-link">进入 About →</span>
+        </a>
       </div>
     </section>
   </main>

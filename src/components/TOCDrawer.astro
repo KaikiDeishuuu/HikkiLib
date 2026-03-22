@@ -21,7 +21,7 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
     {chapters.map(ch => (
       <li>
         <a href={`/${bookId}/${ch.slug}`}>
-          <span class="toc-index">{String(ch.data.chapterNumber).padStart(2, '0')}</span>
+          <span class="toc-index">{ch.data.isAppendix ? '附录' : String(ch.data.chapterNumber).padStart(2, '0')}</span>
           <span class="toc-title">{ch.data.title}</span>
         </a>
       </li>

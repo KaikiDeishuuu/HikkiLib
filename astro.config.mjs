@@ -4,6 +4,6 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://hikkilib.example.com',
+  site: 'https://active.hikki.baby',
   integrations: [sitemap()],
 });
