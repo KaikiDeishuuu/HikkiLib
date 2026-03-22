@@ -6,74 +6,170 @@ const books = await getCollection('books');
 ---
 
 <BaseLayout title="HikkiLib Library">
-  <main class="library-container">
-    <header class="library-header">
-      <h1>HikkiLib</h1>
-      <p>A meticulous reading experience.</p>
+  <main class="library-container page-frame">
+    <header class="library-hero">
+      <p class="section-kicker">Editorial Library</p>
+      <h1>为长篇阅读而设计的安静书架。</h1>
+      <p class="hero-copy">以舒适的节奏、克制的层次与细腻排版，重新整理每一次进入文本的方式。</p>
     </header>
 
-    <div class="book-grid">
-      {books.map(book => (
-        <a href={`/${book.id}`} class="book-card">
-          <h2>{book.data.title}</h2>
-          <p class="author">{book.data.author}</p>
-          <p class="desc">{book.data.description}</p>
-        </a>
-      ))}
-    </div>
+    <section class="library-section">
+      <div class="section-heading">
+        <h2>馆藏章节集</h2>
+        <p>选择一本书，进入更轻、更专注的阅读流。</p>
+      </div>
+
+      <div class="book-grid">
+        {books.map(book => (
+          <a href={`/${book.id}`} class="book-card editorial-panel">
+            <div class="book-card-top">
+              <span class="book-card-label">Book</span>
+              <h3>{book.data.title}</h3>
+              <p class="author">{book.data.author}</p>
+            </div>
+            <p class="desc">{book.data.description}</p>
+            <span class="book-card-link">进入目录 →</span>
+          </a>
+        ))}
+      </div>
+    </section>
   </main>
 </BaseLayout>
 
 <style>
   .library-container {
-    max-width: var(--content-max-width, 42em);
-    margin: 4rem auto;
-    padding: 0 1rem;
+    padding: var(--space-8) 0 var(--space-9);
   }
-  .library-header {
+
+  .library-hero {
+    max-width: 42rem;
+    margin: 0 auto var(--space-8);
     text-align: center;
-    margin-bottom: 4rem;
   }
-  .library-header h1 {
-    font-size: 2.5rem;
-    font-weight: 300;
-    letter-spacing: -0.02em;
-    margin-bottom: 0.5rem;
+
+  .library-hero h1 {
+    margin: var(--space-3) 0 var(--space-4);
+    font-size: clamp(2.6rem, 7vw, 4.9rem);
+    line-height: 1.02;
+    letter-spacing: -0.055em;
+    text-wrap: balance;
   }
-  .library-header p {
+
+  .hero-copy {
+    max-width: 34rem;
+    margin: 0 auto;
     color: var(--text-secondary);
+    font-size: 1.08rem;
+    line-height: 1.85;
   }
+
+  .library-section {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    font-size: 1.45rem;
+    letter-spacing: -0.03em;
+  }
+
+  .section-heading p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+  }
+
   .book-grid {
     display: grid;
-    gap: 2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
   }
+
   .book-card {
-    display: block;
-    padding: 2rem;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: grid;
+    gap: var(--space-4);
+    padding: clamp(1.35rem, 2.8vw, 1.9rem);
+    min-height: 16rem;
   }
-  .book-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+
+  .book-card:hover,
+  .book-card:focus-visible {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--border-light));
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
   }
-  [data-theme="dark"] .book-card:hover {
-    box-shadow: 0 4px 12px rgba(255,255,255,0.05);
+
+  .book-card-top {
+    display: grid;
+    gap: 0.55rem;
   }
-  .book-card h2 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.5rem;
+
+  .book-card-label {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
-  .book-card .author {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-  }
-  .book-card .desc {
-    font-size: 0.95rem;
-    line-height: 1.6;
+
+  .book-card h3 {
     margin: 0;
+    font-size: 1.55rem;
+    line-height: 1.18;
+    letter-spacing: -0.035em;
+  }
+
+  .author,
+  .desc {
+    margin: 0;
+  }
+
+  .author {
+    color: var(--text-secondary);
+    font-size: 0.96rem;
+  }
+
+  .desc {
+    color: var(--text-secondary);
+    line-height: 1.82;
+  }
+
+  .book-card-link {
+    margin-top: auto;
+    color: var(--text-primary);
+    font-size: 0.96rem;
+  }
+
+  @media (max-width: 720px) {
+    .library-container {
+      padding: var(--space-7) 0 var(--space-8);
+    }
+
+    .library-hero {
+      margin-bottom: var(--space-7);
+      text-align: left;
+    }
+
+    .hero-copy {
+      margin-inline: 0;
+    }
+
+    .section-heading {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .book-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

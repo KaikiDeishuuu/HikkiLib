@@ -16,51 +16,186 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
   <style>
     .reader-container {
       position: relative;
-      padding-top: 4rem; /* Leave space for top nav */
-      padding-bottom: 6rem;
+      padding: var(--space-8) 0 var(--space-9);
     }
-    .progress-bar {
+
+    .progress-wrap {
       position: fixed;
-      top: 0;
-      left: 0;
+      inset: var(--nav-height) 0 auto;
+      height: 1px;
+      background: color-mix(in srgb, var(--border-light) 55%, transparent);
+      z-index: 70;
+      pointer-events: none;
+    }
+
+    .progress-bar {
+      height: 100%;
       width: 100%;
-      height: 3px;
-      background-color: var(--accent, #0066CC);
-      transform-origin: left;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 84%, white 16%), var(--accent));
+      transform-origin: left center;
       transform: scaleX(var(--scroll-progress, 0));
-      z-index: 50;
-      transition: transform 0.1s ease-out;
+      transition: transform 120ms ease-out;
     }
-    .reader-nav {
-      max-width: var(--content-max-width, 42em);
-      margin: 4rem auto 0;
+
+    .reader-head {
+      width: min(calc(100% - 2rem), var(--wide-max-width));
+      margin: 0 auto var(--space-7);
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      padding: 0 1rem;
+      gap: var(--space-4);
+      color: var(--text-secondary);
+      font-size: 0.95rem;
     }
-    .reader-nav a {
-      color: var(--accent, #0066CC);
-      font-family: var(--font-sans, sans-serif);
-      text-decoration: none;
-      font-size: 1.1rem;
+
+    .reader-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
     }
-    .reader-nav a:hover {
-      text-decoration: underline;
+
+    .reader-meta-dot {
+      width: 0.28rem;
+      height: 0.28rem;
+      border-radius: 50%;
+      background: var(--border-strong);
+      flex: none;
+    }
+
+    .reader-card {
+      width: min(calc(100% - 2rem), calc(var(--content-max-width) + 5rem));
+      margin: 0 auto;
+      padding: clamp(1.4rem, 2.8vw, 2.4rem) clamp(1rem, 3.2vw, 2.5rem) clamp(2rem, 4vw, 3rem);
+      background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+      border: 1px solid var(--border-light);
+      border-radius: clamp(1.25rem, 3vw, 2rem);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .reader-nav {
+      width: min(calc(100% - 2rem), calc(var(--content-max-width) + 5rem));
+      margin: var(--space-7) auto 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .reader-link,
+    .reader-link-placeholder {
+      min-height: 5.4rem;
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+    }
+
+    .reader-link {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.6rem;
+      box-shadow: var(--shadow-card);
+    }
+
+    .reader-link:hover,
+    .reader-link:focus-visible {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--accent) 28%, var(--border-light));
+      box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+    }
+
+    .reader-link-label {
+      color: var(--text-tertiary);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .reader-link-title {
+      color: var(--text-primary);
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    .reader-link.next {
+      text-align: right;
+      align-items: flex-end;
+    }
+
+    .reader-link-placeholder {
+      background: transparent;
+      box-shadow: none;
+    }
+
+    @media (max-width: 720px) {
+      .reader-container {
+        padding: var(--space-7) 0 var(--space-8);
+      }
+
+      .reader-head,
+      .reader-card,
+      .reader-nav {
+        width: min(calc(100% - 1.25rem), calc(var(--content-max-width) + 5rem));
+      }
+
+      .reader-head {
+        margin-bottom: var(--space-6);
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .reader-nav {
+        grid-template-columns: 1fr;
+      }
+
+      .reader-link.next {
+        text-align: left;
+        align-items: flex-start;
+      }
+
+      .reader-link,
+      .reader-link-placeholder {
+        min-height: 0;
+      }
     }
   </style>
 
-  <div class="progress-bar" id="reading-progress"></div>
-
-  <div class="reader-container">
-    <article class="reader-content">
-      <slot />
-    </article>
-
-    <nav class="reader-nav">
-      {prevUrl ? <a href={prevUrl} rel="prefetch">← 上一章 (Prev)</a> : <span></span>}
-      {nextUrl ? <a href={nextUrl} rel="prefetch">下一章 (Next) →</a> : <span></span>}
-    </nav>
+  <div class="progress-wrap" aria-hidden="true">
+    <div class="progress-bar" id="reading-progress"></div>
   </div>
+
+  <section class="reader-container">
+    <div class="reader-head">
+      <div class="reader-meta">
+        <a href="/" class="eyebrow-link">书架</a>
+        <span class="reader-meta-dot"></span>
+        <span>沉浸式阅读</span>
+      </div>
+    </div>
+
+    <div class="reader-card">
+      <article class="reader-content">
+        <slot />
+      </article>
+    </div>
+
+    <nav class="reader-nav" aria-label="Chapter Navigation">
+      {prevUrl ? (
+        <a href={prevUrl} rel="prefetch" class="reader-link">
+          <span class="reader-link-label">Previous</span>
+          <span class="reader-link-title">← 上一章 / 返回目录</span>
+        </a>
+      ) : <div class="reader-link-placeholder" aria-hidden="true"></div>}
+
+      {nextUrl ? (
+        <a href={nextUrl} rel="prefetch" class="reader-link next">
+          <span class="reader-link-label">Next</span>
+          <span class="reader-link-title">下一章 / 返回目录 →</span>
+        </a>
+      ) : <div class="reader-link-placeholder" aria-hidden="true"></div>}
+    </nav>
+  </section>
 
   <script>
     const updateProgress = () => {
@@ -70,6 +205,7 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
       document.documentElement.style.setProperty('--scroll-progress', progress.toString());
     };
 
+    updateProgress();
     window.addEventListener('scroll', () => {
       requestAnimationFrame(updateProgress);
     }, { passive: true });

@@ -11,13 +11,19 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
 ---
 <div class="toc-drawer" id="toc-drawer">
   <div class="toc-header">
-    <h3>目录</h3>
+    <div>
+      <p class="toc-kicker">Contents</p>
+      <h3>目录</h3>
+    </div>
     <button id="close-toc" aria-label="Close Table of Contents">✕</button>
   </div>
   <ul class="toc-list">
     {chapters.map(ch => (
       <li>
-        <a href={`/${bookId}/${ch.slug}`}>{ch.data.title}</a>
+        <a href={`/${bookId}/${ch.slug}`}>
+          <span class="toc-index">{String(ch.data.chapterNumber).padStart(2, '0')}</span>
+          <span class="toc-title">{ch.data.title}</span>
+        </a>
       </li>
     ))}
   </ul>
@@ -25,96 +31,166 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
 <div class="toc-overlay" id="toc-overlay"></div>
 
 <button id="open-toc" class="toc-trigger" aria-label="Open Table of Contents">
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
 </button>
 
 <style>
   .toc-trigger {
     position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    right: clamp(1rem, 3vw, 2rem);
+    bottom: clamp(1rem, 3vw, 2rem);
+    width: 3.1rem;
+    height: 3.1rem;
     border: 1px solid var(--border-light);
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+    color: var(--text-primary);
+    display: grid;
+    place-items: center;
     cursor: pointer;
-    z-index: 40;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 85;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
+
+  .toc-trigger:hover,
+  .toc-trigger:focus-visible {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 24%, var(--border-light));
+  }
+
   .toc-drawer {
     position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 300px;
-    max-width: 80vw;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    border-right: 1px solid var(--border-light);
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 200;
-    overflow-y: auto;
+    inset: 0 auto 0 0;
+    width: min(24rem, calc(100vw - 2rem));
+    padding: 1rem;
+    transform: translateX(calc(-100% - 1rem));
+    transition: transform 180ms ease-out;
+    z-index: 110;
   }
+
+  .toc-drawer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-right: 1px solid var(--border-light);
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
   .toc-drawer.open {
     transform: translateX(0);
   }
+
   .toc-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.3);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.18);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
-    z-index: 150;
+    transition: opacity 180ms ease-out;
+    z-index: 100;
   }
+
   .toc-overlay.open {
     opacity: 1;
     pointer-events: auto;
   }
+
+  .toc-header,
+  .toc-list {
+    position: relative;
+    z-index: 1;
+  }
+
   .toc-header {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-light);
+    gap: 0.75rem;
+    padding: 1.1rem 1.05rem 0.85rem;
+    margin-bottom: 0.65rem;
   }
+
+  .toc-kicker {
+    margin: 0 0 0.3rem;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
   .toc-header h3 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+    letter-spacing: -0.03em;
   }
+
   #close-toc {
-    background: none;
-    border: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
     color: var(--text-secondary);
-    font-size: 1.5rem;
+    display: grid;
+    place-items: center;
     cursor: pointer;
   }
+
+  #close-toc:hover,
+  #close-toc:focus-visible {
+    background: var(--accent-soft);
+    color: var(--text-primary);
+  }
+
   .toc-list {
     list-style: none;
-    padding: 0;
     margin: 0;
+    padding: 0 0.5rem 0.75rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
   }
-  .toc-list li {
-    border-bottom: 1px solid var(--border-light);
+
+  .toc-list li + li {
+    border-top: 1px solid var(--border-light);
   }
+
   .toc-list a {
-    display: block;
-    padding: 1rem 1.5rem;
-    color: var(--text-primary);
-    text-decoration: none;
-    transition: background 0.2s;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.9rem;
+    align-items: start;
+    padding: 1rem 0.55rem;
+    border-radius: 0.85rem;
   }
-  .toc-list a:hover {
-    background: var(--border-light);
+
+  .toc-list a:hover,
+  .toc-list a:focus-visible {
+    background: color-mix(in srgb, var(--accent-soft) 72%, transparent);
+  }
+
+  .toc-index {
+    color: var(--text-tertiary);
+    font-size: 0.82rem;
+    padding-top: 0.15rem;
+  }
+
+  .toc-title {
+    line-height: 1.55;
+  }
+
+  @media (max-width: 720px) {
+    .toc-drawer {
+      width: calc(100vw - 1rem);
+      padding: 0.5rem;
+    }
+
+    .toc-list a {
+      padding: 1rem 0.7rem;
+    }
   }
 </style>
 
@@ -124,12 +200,19 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
   const openBtn = document.getElementById('open-toc');
   const closeBtn = document.getElementById('close-toc');
 
-  const toggleTOC = () => {
-    drawer?.classList.toggle('open');
-    overlay?.classList.toggle('open');
+  const setTOCState = (isOpen) => {
+    drawer?.classList.toggle('open', isOpen);
+    overlay?.classList.toggle('open', isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
   };
 
-  openBtn?.addEventListener('click', toggleTOC);
-  closeBtn?.addEventListener('click', toggleTOC);
-  overlay?.addEventListener('click', toggleTOC);
+  openBtn?.addEventListener('click', () => setTOCState(true));
+  closeBtn?.addEventListener('click', () => setTOCState(false));
+  overlay?.addEventListener('click', () => setTOCState(false));
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      setTOCState(false);
+    }
+  });
 </script>

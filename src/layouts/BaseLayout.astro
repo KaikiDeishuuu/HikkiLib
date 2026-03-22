@@ -9,9 +9,9 @@ interface Props {
   type?: 'website' | 'article';
 }
 
-const { 
-  title, 
-  description = "A meticulous long-form reading experience.", 
+const {
+  title,
+  description = "A meticulous long-form reading experience.",
   image = "/default-og.png",
   type = "website"
 } = Astro.props;
@@ -26,30 +26,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'http://localhost
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-
-    <!-- Canonical URL -->
     <link rel="canonical" href={canonicalURL} />
-
-    <!-- Primary Meta Tags -->
     <title>{title}</title>
     <meta name="title" content={title} />
     <meta name="description" content={description} />
-
-    <!-- Open Graph / Facebook -->
     <meta property="og:type" content={type} />
     <meta property="og:url" content={Astro.url} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL(image, Astro.url)} />
-
-    <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={Astro.url} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={new URL(image, Astro.url)} />
 
-    <!-- Theme Initialization Script -->
     <script is:inline>
       const getThemePreference = () => {
         if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
@@ -57,7 +48,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'http://localhost
         }
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       };
-      
+
       const theme = getThemePreference();
       if (theme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
@@ -65,7 +56,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'http://localhost
     </script>
   </head>
   <body>
-    <ThemeToggle />
-    <slot />
+    <div class="site-shell">
+      <header class="site-header">
+        <div class="site-header-inner">
+          <a href="/" class="site-brand" aria-label="HikkiLib Home">
+            <span class="site-brand-mark">HikkiLib</span>
+            <span class="site-brand-copy">Quiet reading, carefully set.</span>
+          </a>
+          <div class="site-actions">
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+      <main class="page-enter">
+        <slot />
+      </main>
+    </div>
   </body>
 </html>
