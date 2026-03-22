@@ -1,11 +1,98 @@
-<div id="floating-toc-root" aria-hidden="true"></div>
+---
+import { getCollection } from 'astro:content';
+
+interface Props {
+  bookId: string;
+  currentChapterSlug: string;
+}
+
+const { bookId, currentChapterSlug } = Astro.props;
+const chapters = await getCollection('chapters', ({ data }) => data.bookId === bookId);
+chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
+const book = (await getCollection('books')).find((entry) => entry.id === bookId);
+const hasChapters = chapters.length > 0;
+---
+
+<div id="floating-directory-root" aria-hidden="true" hidden>
+  <div class="floating-directory-backdrop" data-directory-backdrop hidden></div>
+
+  <div class="floating-directory-shell" data-directory-shell data-has-chapters={String(hasChapters)}>
+    <aside
+      class="floating-directory-panel"
+      id="floating-directory-panel"
+      data-directory-panel
+      aria-hidden="true"
+      aria-label={`${book?.data.title || 'Book'} chapter directory`}
+    >
+      <div class="floating-directory-header">
+        <div>
+          <p class="floating-directory-kicker">Book directory</p>
+          <div class="floating-directory-title-row">
+            <h2>{book?.data.title || '目录'}</h2>
+            <span class="floating-directory-count">{chapters.length} chapters</span>
+          </div>
+        </div>
+
+        <button class="floating-directory-close" type="button" data-directory-close aria-label="关闭目录">✕</button>
+      </div>
+
+      <div class="floating-directory-body">
+        {hasChapters ? (
+          <ol class="floating-directory-list">
+            {chapters.map((chapter) => {
+              const isCurrent = chapter.slug === currentChapterSlug;
+              return (
+                <li class="floating-directory-item">
+                  <a
+                    class:list={["floating-directory-link", { "is-current": isCurrent }]}
+                    href={`/${bookId}/${chapter.slug}`}
+                    aria-current={isCurrent ? 'page' : undefined}
+                  >
+                    <span class="floating-directory-index">
+                      {chapter.data.isAppendix ? '附录' : String(chapter.data.chapterNumber).padStart(2, '0')}
+                    </span>
+                    <span class="floating-directory-copy">
+                      <span class="floating-directory-item-title">{chapter.data.title}</span>
+                      <span class="floating-directory-item-meta">
+                        {isCurrent ? '当前章节' : 'Chapter'}
+                      </span>
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <p class="floating-directory-empty">当前书籍暂时没有可显示的章节目录。</p>
+        )}
+      </div>
+    </aside>
+
+    <button
+      class="floating-directory-button"
+      data-directory-button
+      type="button"
+      aria-controls="floating-directory-panel"
+      aria-expanded="false"
+      aria-label="打开章节目录"
+      disabled={!hasChapters}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+      <span class="floating-directory-button-label">目录</span>
+    </button>
+  </div>
+</div>
 
 <style>
-  :global(body.toc-panel-open) {
+  :global(body.directory-panel-open) {
     overflow: hidden;
   }
 
-  :global(.floating-toc-shell) {
+  .floating-directory-shell {
     position: fixed;
     right: max(1rem, env(safe-area-inset-right));
     bottom: max(1rem, env(safe-area-inset-bottom));
@@ -17,28 +104,28 @@
     pointer-events: none;
   }
 
-  :global(.floating-toc-shell[data-visible='false']) {
+  .floating-directory-shell[data-has-chapters='false'] {
     display: none;
   }
 
-  :global(.floating-toc-backdrop) {
+  .floating-directory-backdrop {
     position: fixed;
     inset: 0;
+    z-index: 398;
     background: rgba(15, 23, 42, 0.32);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--transition-quick);
-    z-index: 398;
   }
 
-  :global(.floating-toc-backdrop[data-open='true']) {
+  .floating-directory-backdrop.is-open {
     opacity: 1;
     pointer-events: auto;
   }
 
-  :global(.floating-toc-panel) {
-    width: min(22rem, calc(100vw - 1.5rem));
-    max-height: min(70vh, 34rem);
+  .floating-directory-panel {
+    width: min(23rem, calc(100vw - 1.5rem));
+    max-height: min(72vh, 34rem);
     overflow: hidden;
     border-radius: 1.25rem;
     border: 1px solid var(--border-light);
@@ -54,13 +141,13 @@
     pointer-events: auto;
   }
 
-  :global(.floating-toc-panel[data-open='true']) {
+  .floating-directory-panel.is-open {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
   }
 
-  :global(.floating-toc-button) {
+  .floating-directory-button {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -73,23 +160,27 @@
     box-shadow: var(--shadow-card);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    pointer-events: auto;
     cursor: pointer;
+    pointer-events: auto;
   }
 
-  :global(.floating-toc-button:hover),
-  :global(.floating-toc-button:focus-visible) {
+  .floating-directory-button:hover,
+  .floating-directory-button:focus-visible {
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--accent) 28%, var(--border-light));
   }
 
-  :global(.floating-toc-button-label) {
+  .floating-directory-button:disabled {
+    display: none;
+  }
+
+  .floating-directory-button-label {
     color: var(--text-secondary);
     font-size: 0.82rem;
     white-space: nowrap;
   }
 
-  :global(.floating-toc-panel-header) {
+  .floating-directory-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -98,7 +189,7 @@
     border-bottom: 1px solid var(--border-light);
   }
 
-  :global(.floating-toc-kicker) {
+  .floating-directory-kicker {
     margin: 0 0 0.25rem;
     color: var(--text-tertiary);
     font-size: 0.72rem;
@@ -106,26 +197,26 @@
     text-transform: uppercase;
   }
 
-  :global(.floating-toc-title-row) {
+  .floating-directory-title-row {
     display: flex;
     align-items: baseline;
     gap: 0.55rem;
     flex-wrap: wrap;
   }
 
-  :global(.floating-toc-title-row h2) {
+  .floating-directory-title-row h2 {
     margin: 0;
     font-size: 1.05rem;
     line-height: 1.2;
     font-family: var(--font-sans);
   }
 
-  :global(.floating-toc-count) {
+  .floating-directory-count {
     color: var(--text-tertiary);
     font-size: 0.82rem;
   }
 
-  :global(.floating-toc-close) {
+  .floating-directory-close {
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 999px;
@@ -135,394 +226,154 @@
     cursor: pointer;
   }
 
-  :global(.floating-toc-close:hover),
-  :global(.floating-toc-close:focus-visible) {
+  .floating-directory-close:hover,
+  .floating-directory-close:focus-visible {
     background: var(--accent-soft);
     color: var(--text-primary);
   }
 
-  :global(.floating-toc-list) {
-    list-style: none;
-    margin: 0;
-    padding: 0.6rem;
-    max-height: min(52vh, 28rem);
+  .floating-directory-body {
+    max-height: min(56vh, 28rem);
     overflow: auto;
   }
 
-  :global(.floating-toc-item) {
+  .floating-directory-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.6rem;
+  }
+
+  .floating-directory-item {
     margin: 0;
   }
 
-  :global(.floating-toc-link) {
-    width: 100%;
-    border-radius: 0.9rem;
-    padding: 0.75rem 0.85rem;
+  .floating-directory-link {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 0.7rem;
     align-items: start;
-    text-align: left;
-    cursor: pointer;
+    width: 100%;
+    padding: 0.8rem 0.9rem;
+    border-radius: 0.9rem;
   }
 
-  :global(.floating-toc-link:hover),
-  :global(.floating-toc-link:focus-visible) {
+  .floating-directory-link:hover,
+  .floating-directory-link:focus-visible {
     background: color-mix(in srgb, var(--accent-soft) 70%, transparent);
   }
 
-  :global(.floating-toc-link[data-active='true']) {
-    background: color-mix(in srgb, var(--accent-soft) 90%, transparent);
-    color: var(--text-primary);
+  .floating-directory-link.is-current {
+    background: color-mix(in srgb, var(--accent-soft) 92%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-light));
   }
 
-  :global(.floating-toc-link[data-level='3']) {
-    padding-left: 1.5rem;
-  }
-
-  :global(.floating-toc-link[data-level='4']) {
-    padding-left: 2.15rem;
-  }
-
-  :global(.floating-toc-item-index) {
+  .floating-directory-index {
+    min-width: 1.75rem;
     color: var(--text-tertiary);
     font-size: 0.78rem;
     line-height: 1.6;
-    min-width: 1.6rem;
   }
 
-  :global(.floating-toc-item-copy) {
+  .floating-directory-copy {
     min-width: 0;
   }
 
-  :global(.floating-toc-item-title) {
+  .floating-directory-item-title {
     display: block;
-    color: inherit;
     line-height: 1.45;
+    color: var(--text-primary);
     word-break: break-word;
   }
 
-  :global(.floating-toc-item-meta) {
+  .floating-directory-item-meta {
     display: block;
-    margin-top: 0.12rem;
+    margin-top: 0.14rem;
     color: var(--text-tertiary);
     font-size: 0.75rem;
-    text-transform: uppercase;
     letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
-  :global(.floating-toc-empty) {
+  .floating-directory-empty {
     padding: 1rem;
     color: var(--text-secondary);
     line-height: 1.6;
   }
 
   @media (max-width: 720px) {
-    :global(.floating-toc-shell) {
+    .floating-directory-shell {
       right: max(0.75rem, env(safe-area-inset-right));
       bottom: max(0.75rem, env(safe-area-inset-bottom));
-      left: auto;
     }
 
-    :global(.floating-toc-button) {
+    .floating-directory-button {
       min-height: 3rem;
       padding: 0 0.9rem;
     }
 
-    :global(.floating-toc-panel) {
-      width: min(100vw - 1rem, 22rem);
-      max-height: min(76vh, 32rem);
+    .floating-directory-panel {
+      width: min(100vw - 1rem, 23rem);
+      max-height: min(78vh, 32rem);
     }
 
-    :global(.floating-toc-list) {
-      max-height: min(58vh, 26rem);
+    .floating-directory-body {
+      max-height: min(62vh, 26rem);
     }
   }
 </style>
 
 <script>
   // @ts-nocheck
-  const root = document.getElementById('floating-toc-root');
+  const root = document.getElementById('floating-directory-root');
 
   if (root && !root.dataset.initialized) {
     root.dataset.initialized = 'true';
 
-    const PANEL_ID = 'floating-toc-panel';
-    const BUTTON_ID = 'floating-toc-button';
-    const CONTENT_SELECTOR = 'article.reader-content';
-    const HEADING_SELECTOR = 'h2, h3, h4';
-    const COLLAPSE_ON_SELECT = true;
+    const backdrop = root.querySelector('[data-directory-backdrop]');
+    const shell = root.querySelector('[data-directory-shell]');
+    const panel = root.querySelector('[data-directory-panel]');
+    const button = root.querySelector('[data-directory-button]');
+    const closeButton = root.querySelector('[data-directory-close]');
+    const currentLink = root.querySelector('.floating-directory-link.is-current');
+    const directoryLinks = root.querySelectorAll('.floating-directory-link');
 
-    const state = {
-      open: false,
-      headings: [],
-      activeId: '',
-      observer: null,
-      mutationObserver: null,
-      observedContent: null,
-      refreshTimer: undefined,
-    };
-
-    const backdrop = document.createElement('div');
-    backdrop.className = 'floating-toc-backdrop';
-    backdrop.dataset.open = 'false';
-    backdrop.hidden = true;
-
-    const shell = document.createElement('div');
-    shell.className = 'floating-toc-shell';
-    shell.dataset.visible = 'false';
-
-    shell.innerHTML = `
-      <section class="floating-toc-panel" id="${PANEL_ID}" aria-hidden="true" data-open="false">
-        <header class="floating-toc-panel-header">
-          <div>
-            <p class="floating-toc-kicker">On this page</p>
-            <div class="floating-toc-title-row">
-              <h2>目录</h2>
-              <span class="floating-toc-count" data-toc-count>0 sections</span>
-            </div>
-          </div>
-          <button class="floating-toc-close" type="button" aria-label="关闭目录">✕</button>
-        </header>
-        <div class="floating-toc-body"></div>
-      </section>
-      <button class="floating-toc-button" id="${BUTTON_ID}" type="button" aria-controls="${PANEL_ID}" aria-expanded="false">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-        <span class="floating-toc-button-label">目录</span>
-      </button>
-    `;
-
-    document.body.append(backdrop, shell);
-
-    const panel = shell.querySelector('.floating-toc-panel');
-    const body = shell.querySelector('.floating-toc-body');
-    const button = shell.querySelector('.floating-toc-button');
-    const closeButton = shell.querySelector('.floating-toc-close');
-    const count = shell.querySelector('[data-toc-count]');
-
-    const slugify = (value) => value
-      .toLowerCase()
-      .trim()
-      .replace(/<[^>]+>/g, '')
-      .replace(/[\u0000-\u001f]/g, '')
-      .replace(/[^\p{Letter}\p{Number}\s-]/gu, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '') || 'section';
-
-    const getContent = () => document.querySelector(CONTENT_SELECTOR);
-
-    const escapeHtml = (value) => value
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#39;');
-
-    const getHeadings = () => {
-      const content = getContent();
-      if (!content) return [];
-
-      const seen = new Set();
-      return Array.from(content.querySelectorAll(HEADING_SELECTOR)).flatMap((node) => {
-        if (!(node instanceof HTMLElement)) return [];
-        const level = Number(node.tagName.slice(1));
-        if (level < 2 || level > 4) return [];
-
-        const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
-        if (!text) return [];
-
-        let id = node.id.trim();
-        const base = slugify(id || text);
-        if (!id || seen.has(id)) {
-          let unique = base;
-          let suffix = 2;
-          while ((document.getElementById(unique) && document.getElementById(unique) !== node) || seen.has(unique)) {
-            unique = `${base}-${suffix++}`;
-          }
-          id = unique;
-          node.id = id;
-        }
-        seen.add(id);
-
-        if (!node.hasAttribute('tabindex')) {
-          node.setAttribute('tabindex', '-1');
-        }
-        node.setAttribute('data-toc-heading', 'true');
-
-        return [{ id, text, level, element: node }];
-      });
-    };
+    if (backdrop && shell) {
+      document.body.append(backdrop, shell);
+      root.remove();
+    }
 
     const setOpen = (open) => {
-      state.open = open && state.headings.length > 0;
-      if (!panel || !button) return;
+      if (!backdrop || !panel || !button || !shell) return;
+      if (shell.dataset.hasChapters === 'false') return;
 
-      panel.dataset.open = String(state.open);
-      panel.setAttribute('aria-hidden', String(!state.open));
-      button.setAttribute('aria-expanded', String(state.open));
-      backdrop.dataset.open = String(state.open);
-      backdrop.hidden = !state.open;
-      document.body.classList.toggle('toc-panel-open', state.open);
+      panel.classList.toggle('is-open', open);
+      panel.setAttribute('aria-hidden', String(!open));
+      button.setAttribute('aria-expanded', String(open));
+      backdrop.classList.toggle('is-open', open);
+      backdrop.hidden = !open;
+      document.body.classList.toggle('directory-panel-open', open);
 
-      if (state.open) {
+      if (open) {
         closeButton?.focus();
+        currentLink?.scrollIntoView({ block: 'nearest' });
       }
     };
 
-    const updateActiveStyles = () => {
-      if (!body) return;
-      body.querySelectorAll('.floating-toc-link').forEach((link) => {
-        link.dataset.active = String(link.dataset.targetId === state.activeId);
-      });
-    };
+    button?.addEventListener('click', () => {
+      const nextOpen = panel ? !panel.classList.contains('is-open') : false;
+      setOpen(nextOpen);
+    });
 
-    const scrollToHeading = (id) => {
-      const target = document.getElementById(id);
-      if (!target) return;
-
-      const header = document.getElementById('site-header');
-      const headerHeight = header instanceof HTMLElement ? header.getBoundingClientRect().height : 0;
-      const top = target.getBoundingClientRect().top + window.scrollY - headerHeight - 18;
-      window.history.replaceState({}, '', `#${id}`);
-      window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
-      state.activeId = id;
-      updateActiveStyles();
-
-      if (COLLAPSE_ON_SELECT) {
-        setOpen(false);
-        button?.focus();
-      }
-    };
-
-    const renderHeadings = () => {
-      if (!body || !count) return;
-      count.textContent = `${state.headings.length} section${state.headings.length === 1 ? '' : 's'}`;
-
-      if (state.headings.length === 0) {
-        body.innerHTML = '<p class="floating-toc-empty">当前页面没有可用的小节标题，因此目录按钮会自动隐藏。</p>';
-        shell.dataset.visible = 'false';
-        setOpen(false);
-        return;
-      }
-
-      shell.dataset.visible = 'true';
-      body.innerHTML = `
-        <ol class="floating-toc-list">
-          ${state.headings.map((heading, index) => `
-            <li class="floating-toc-item">
-              <button
-                class="floating-toc-link"
-                type="button"
-                data-target-id="${heading.id}"
-                data-level="${heading.level}"
-                data-active="${heading.id === state.activeId}"
-              >
-                <span class="floating-toc-item-index">${index + 1}</span>
-                <span class="floating-toc-item-copy">
-                  <span class="floating-toc-item-title">${escapeHtml(heading.text)}</span>
-                  <span class="floating-toc-item-meta">H${heading.level}</span>
-                </span>
-              </button>
-            </li>
-          `).join('')}
-        </ol>
-      `;
-
-      body.querySelectorAll('.floating-toc-link').forEach((link) => {
-        link.addEventListener('click', () => {
-          const id = link.dataset.targetId;
-          if (id) scrollToHeading(id);
-        });
-      });
-    };
-
-    const pickActiveHeading = () => {
-      if (state.headings.length === 0) {
-        state.activeId = '';
-        updateActiveStyles();
-        return;
-      }
-
-      const header = document.getElementById('site-header');
-      const headerHeight = header instanceof HTMLElement ? header.getBoundingClientRect().height : 0;
-      const threshold = headerHeight + 32;
-
-      let active = state.headings[0];
-      for (const heading of state.headings) {
-        const rect = heading.element.getBoundingClientRect();
-        if (rect.top - threshold <= 0) {
-          active = heading;
-        } else {
-          break;
-        }
-      }
-
-      const viewportBottom = window.innerHeight + window.scrollY;
-      const documentHeight = document.documentElement.scrollHeight;
-      if (documentHeight - viewportBottom < 8) {
-        active = state.headings[state.headings.length - 1];
-      }
-
-      if (active && active.id !== state.activeId) {
-        state.activeId = active.id;
-        updateActiveStyles();
-      }
-    };
-
-    const refreshObserver = () => {
-      state.observer?.disconnect();
-      if (state.headings.length === 0) return;
-
-      state.observer = new IntersectionObserver(() => {
-        pickActiveHeading();
-      }, {
-        root: null,
-        rootMargin: '-25% 0px -55% 0px',
-        threshold: [0, 0.1, 0.5, 1],
-      });
-
-      state.headings.forEach((heading) => state.observer?.observe(heading.element));
-      pickActiveHeading();
-    };
-
-    const scheduleRefresh = () => {
-      window.clearTimeout(state.refreshTimer);
-      state.refreshTimer = window.setTimeout(refresh, 60);
-    };
-
-    const ensureMutationObserver = () => {
-      const content = getContent();
-      if (!content || state.observedContent === content) return;
-
-      state.mutationObserver?.disconnect();
-      state.mutationObserver = new MutationObserver(scheduleRefresh);
-      state.mutationObserver.observe(content, { childList: true, subtree: true, characterData: true });
-      state.observedContent = content;
-    };
-
-    const refresh = () => {
-      ensureMutationObserver();
-      state.headings = getHeadings();
-      const current = state.headings.find((heading) => heading.id === state.activeId);
-      state.activeId = current ? current.id : (state.headings[0]?.id || '');
-      renderHeadings();
-      refreshObserver();
-
-      if (!state.observedContent) {
-        scheduleRefresh();
-      }
-    };
-
-    button?.addEventListener('click', () => setOpen(!state.open));
     closeButton?.addEventListener('click', () => {
       setOpen(false);
       button?.focus();
     });
-    backdrop.addEventListener('click', () => setOpen(false));
+
+    backdrop?.addEventListener('click', () => setOpen(false));
+
+    directoryLinks.forEach((link) => {
+      link.addEventListener('click', () => setOpen(false));
+    });
 
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
@@ -530,12 +381,5 @@
         button?.focus();
       }
     });
-
-    window.addEventListener('scroll', pickActiveHeading, { passive: true });
-    window.addEventListener('resize', scheduleRefresh, { passive: true });
-    window.addEventListener('hashchange', pickActiveHeading);
-    window.addEventListener('pageshow', scheduleRefresh);
-
-    refresh();
   }
 </script>
