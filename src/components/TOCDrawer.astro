@@ -37,9 +37,9 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
 
 <style>
   .toc-trigger {
-    position: fixed;
+    position: fixed !important;
     right: clamp(1rem, 3vw, 2rem);
-    bottom: calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-bottom, 0px));
+    bottom: 1rem;
     min-width: 3.1rem;
     height: 3.1rem;
     padding: 0 .85rem;
@@ -52,7 +52,7 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
     justify-content: center;
     gap: .4rem;
     cursor: pointer;
-    z-index: 85;
+    z-index: 140;
     box-shadow: var(--shadow-card);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -62,6 +62,13 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
     font-size: .78rem;
     color: var(--text-secondary);
     letter-spacing: .02em;
+    white-space: nowrap;
+  }
+
+  @supports (bottom: env(safe-area-inset-bottom)) {
+    .toc-trigger {
+      bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
   }
 
   .toc-trigger:hover,
@@ -195,7 +202,7 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
   @media (max-width: 720px) {
     .toc-trigger {
       right: .9rem;
-      bottom: calc(.9rem + env(safe-area-inset-bottom, 0px));
+      bottom: .9rem;
       height: 2.9rem;
       min-width: 2.9rem;
       padding: 0 .75rem;
