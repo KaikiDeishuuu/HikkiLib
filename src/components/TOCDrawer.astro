@@ -9,16 +9,29 @@ const { bookId } = Astro.props;
 const chapters = await getCollection('chapters', ({ data }) => data.bookId === bookId);
 chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
 ---
-<div class="toc-drawer" id="toc-drawer">
-  <div class="toc-header">
+
+<button id="toc-fab" class="toc-fab" type="button" aria-label="打开目录" aria-controls="toc-panel" aria-expanded="false">
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+    <line x1="3" y1="6" x2="21" y2="6"></line>
+    <line x1="3" y1="12" x2="21" y2="12"></line>
+    <line x1="3" y1="18" x2="21" y2="18"></line>
+  </svg>
+  <span>目录</span>
+</button>
+
+<div id="toc-mask" class="toc-mask" hidden></div>
+
+<aside id="toc-panel" class="toc-panel" aria-hidden="true">
+  <div class="toc-panel-head">
     <div>
       <p class="toc-kicker">Contents</p>
       <h3>目录</h3>
     </div>
-    <button id="close-toc" aria-label="Close Table of Contents">✕</button>
+    <button id="toc-close" type="button" aria-label="关闭目录">✕</button>
   </div>
+
   <ul class="toc-list">
-    {chapters.map(ch => (
+    {chapters.map((ch) => (
       <li>
         <a href={`/${bookId}/${ch.slug}`}>
           <span class="toc-index">{ch.data.isAppendix ? '附录' : String(ch.data.chapterNumber).padStart(2, '0')}</span>
@@ -27,152 +40,118 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
       </li>
     ))}
   </ul>
-</div>
-<div class="toc-overlay" id="toc-overlay"></div>
-
-<button id="open-toc" class="toc-trigger" aria-label="Open Table of Contents">
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-  <span>目录</span>
-</button>
+</aside>
 
 <style>
-  .toc-trigger {
+  .toc-fab {
     position: fixed !important;
-    right: clamp(1rem, 3vw, 2rem);
+    right: 1rem;
     bottom: 1rem;
-    min-width: 3.1rem;
-    height: 3.1rem;
-    padding: 0 .85rem;
-    border: 1px solid var(--border-light);
+    z-index: 250;
+    height: 2.95rem;
+    min-width: 2.95rem;
+    padding: 0 .8rem;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+    border: 1px solid var(--border-light);
+    background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
     color: var(--text-primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: .4rem;
-    cursor: pointer;
-    z-index: 140;
+    gap: .38rem;
     box-shadow: var(--shadow-card);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
+    transition: opacity 140ms ease-out, transform 140ms ease-out, border-color 140ms ease-out;
   }
 
-  .toc-trigger span {
-    font-size: .78rem;
+  .toc-fab span {
+    font-size: .76rem;
     color: var(--text-secondary);
-    letter-spacing: .02em;
     white-space: nowrap;
   }
 
-  @supports (bottom: env(safe-area-inset-bottom)) {
-    .toc-trigger {
-      bottom: calc(1rem + env(safe-area-inset-bottom));
-    }
+  .toc-fab:hover,
+  .toc-fab:focus-visible {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border-light));
   }
 
-  .toc-trigger:hover,
-  .toc-trigger:focus-visible {
-    transform: translateY(-2px);
-    border-color: color-mix(in srgb, var(--accent) 24%, var(--border-light));
+  .toc-fab.is-scrolling {
+    opacity: .5;
   }
 
-  .toc-trigger.scrolling {
-    opacity: .48;
-  }
-
-  .toc-drawer {
+  .toc-mask {
     position: fixed;
-    inset: 0 auto 0 0;
-    width: min(24rem, calc(100vw - 2rem));
-    padding: 1rem;
-    transform: translate3d(calc(-100% - 1rem), 0, 0);
-    transition: transform 180ms ease-out;
-    z-index: 160;
+    inset: 0;
+    z-index: 240;
+    background: rgba(0,0,0,.28);
   }
 
-  .toc-drawer::before {
-    content: '';
-    position: absolute;
-    inset: 0;
+  .toc-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 260;
+    width: min(24rem, calc(100vw - 1.2rem));
+    background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
     border-right: 1px solid var(--border-light);
-    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-    background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
-    box-shadow: var(--shadow-soft);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 14px 40px rgba(0,0,0,.2);
+    transform: translateX(-102%);
+    transition: transform 170ms ease-out;
+    display: flex;
+    flex-direction: column;
   }
 
-  .toc-drawer.open {
-    transform: translate3d(0, 0, 0);
+  .toc-panel.is-open {
+    transform: translateX(0);
   }
 
-  .toc-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.18);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 180ms ease-out;
-    z-index: 150;
-  }
-
-  .toc-overlay.open {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .toc-header,
-  .toc-list {
-    position: relative;
-    z-index: 1;
-  }
-
-  .toc-header {
+  .toc-panel-head {
+    padding: .95rem .9rem .75rem;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 0.75rem;
-    padding: 1.1rem 1.05rem 0.85rem;
-    margin-bottom: 0.65rem;
+    gap: .6rem;
+    border-bottom: 1px solid var(--border-light);
   }
 
   .toc-kicker {
-    margin: 0 0 0.3rem;
+    margin: 0 0 .22rem;
     color: var(--text-tertiary);
-    font-size: 0.72rem;
-    letter-spacing: 0.14em;
+    font-size: .7rem;
+    letter-spacing: .12em;
     text-transform: uppercase;
   }
 
-  .toc-header h3 {
+  .toc-panel-head h3 {
     margin: 0;
-    font-size: 1.25rem;
-    letter-spacing: -0.03em;
+    font-size: 1.15rem;
+    letter-spacing: -.02em;
   }
 
-  #close-toc {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    color: var(--text-secondary);
+  #toc-close {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 999px;
     display: grid;
     place-items: center;
-    cursor: pointer;
+    color: var(--text-secondary);
   }
 
-  #close-toc:hover,
-  #close-toc:focus-visible {
+  #toc-close:hover,
+  #toc-close:focus-visible {
     background: var(--accent-soft);
     color: var(--text-primary);
   }
 
   .toc-list {
-    list-style: none;
     margin: 0;
-    padding: 0 0.5rem 0.75rem;
-    max-height: calc(100vh - 6rem);
+    padding: .35rem .45rem .75rem;
+    list-style: none;
     overflow-y: auto;
+    flex: 1;
   }
 
   .toc-list li + li {
@@ -182,85 +161,84 @@ chapters.sort((a, b) => a.data.chapterNumber - b.data.chapterNumber);
   .toc-list a {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 0.9rem;
+    gap: .75rem;
     align-items: start;
-    padding: 1rem 0.55rem;
-    border-radius: 0.85rem;
+    padding: .95rem .5rem;
+    border-radius: .75rem;
   }
 
   .toc-list a:hover,
   .toc-list a:focus-visible {
-    background: color-mix(in srgb, var(--accent-soft) 72%, transparent);
+    background: color-mix(in srgb, var(--accent-soft) 74%, transparent);
   }
 
   .toc-index {
     color: var(--text-tertiary);
-    font-size: 0.82rem;
-    padding-top: 0.15rem;
+    font-size: .8rem;
+    padding-top: .15rem;
   }
 
   .toc-title {
-    line-height: 1.55;
+    line-height: 1.5;
+    color: var(--text-primary);
+  }
+
+  @supports (bottom: env(safe-area-inset-bottom)) {
+    .toc-fab {
+      bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
   }
 
   @media (max-width: 720px) {
-    .toc-trigger {
+    .toc-fab {
       right: .9rem;
       bottom: .9rem;
-      height: 2.9rem;
-      min-width: 2.9rem;
-      padding: 0 .75rem;
-      gap: .3rem;
+      height: 2.85rem;
+      min-width: 2.85rem;
+      padding: 0 .72rem;
     }
 
-    .toc-trigger svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .toc-trigger span {
+    .toc-fab span {
       font-size: .72rem;
     }
 
-    .toc-drawer {
-      width: calc(100vw - .7rem);
-      padding: 0.35rem;
-    }
-
-    .toc-list a {
-      padding: .95rem .65rem;
+    .toc-panel {
+      width: calc(100vw - .55rem);
     }
   }
 </style>
 
 <script>
-  const drawer = document.getElementById('toc-drawer');
-  const overlay = document.getElementById('toc-overlay');
-  const openBtn = document.getElementById('open-toc');
-  const closeBtn = document.getElementById('close-toc');
-  const links = drawer?.querySelectorAll('a');
+  const fab = document.getElementById('toc-fab');
+  const panel = document.getElementById('toc-panel');
+  const mask = document.getElementById('toc-mask');
+  const closeBtn = document.getElementById('toc-close');
+  const links = panel?.querySelectorAll('a');
 
-  const setTOCState = (isOpen) => {
-    drawer?.classList.toggle('open', isOpen);
-    overlay?.classList.toggle('open', isOpen);
-    document.body.style.overflow = isOpen ? 'hidden' : '';
+  const setOpen = (open) => {
+    if (!panel || !mask || !fab) return;
+    panel.classList.toggle('is-open', open);
+    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    mask.hidden = !open;
+    fab.setAttribute('aria-expanded', open ? 'true' : 'false');
+    document.body.style.overflow = open ? 'hidden' : '';
   };
 
-  openBtn?.addEventListener('click', () => setTOCState(true));
-  closeBtn?.addEventListener('click', () => setTOCState(false));
-  overlay?.addEventListener('click', () => setTOCState(false));
-  links?.forEach((a) => a.addEventListener('click', () => setTOCState(false)));
+  fab?.addEventListener('click', () => setOpen(true));
+  closeBtn?.addEventListener('click', () => setOpen(false));
+  mask?.addEventListener('click', () => setOpen(false));
+  links?.forEach((a) => a.addEventListener('click', () => setOpen(false)));
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') setTOCState(false);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setOpen(false);
   });
 
-  let fadeTimer;
+  let timer;
   const onScroll = () => {
-    if (!openBtn) return;
-    openBtn.classList.add('scrolling');
-    clearTimeout(fadeTimer);
-    fadeTimer = setTimeout(() => openBtn.classList.remove('scrolling'), 180);
+    if (!fab) return;
+    fab.classList.add('is-scrolling');
+    clearTimeout(timer);
+    timer = setTimeout(() => fab.classList.remove('is-scrolling'), 180);
   };
   window.addEventListener('scroll', onScroll, { passive: true });
 </script>
