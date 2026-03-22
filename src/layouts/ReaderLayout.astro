@@ -39,40 +39,6 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
       transition: transform 120ms ease-out;
     }
 
-    .reader-head {
-      position: sticky;
-      top: calc(var(--nav-height) + 0.85rem);
-      z-index: 20;
-      width: min(calc(100% - 2rem), var(--wide-max-width));
-      margin: 0 auto var(--space-6);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-4);
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-      padding: .5rem .65rem;
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-pill);
-      background: color-mix(in srgb, var(--surface-strong) 86%, transparent);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .reader-meta {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      min-width: 0;
-    }
-
-    .reader-meta-dot {
-      width: 0.28rem;
-      height: 0.28rem;
-      border-radius: 50%;
-      background: var(--border-strong);
-      flex: none;
-    }
 
     .reader-card {
       width: min(calc(100% - 2rem), calc(var(--content-max-width) + 5rem));
@@ -145,19 +111,9 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
       }
 
       .progress-wrap,
-      .reader-head,
       .reader-card,
       .reader-nav {
         width: min(calc(100% - 1.25rem), calc(var(--content-max-width) + 5rem));
-      }
-
-      .reader-head {
-        top: calc(var(--nav-height) + 0.7rem);
-        margin-bottom: var(--space-5);
-        flex-direction: row;
-        align-items: center;
-        padding: .45rem .55rem;
-        font-size: .9rem;
       }
 
       .reader-nav {
@@ -187,14 +143,6 @@ const { title, description, prevUrl, nextUrl } = Astro.props;
   </div>
 
   <section class="reader-container">
-    <div class="reader-head">
-      <div class="reader-meta">
-        <a href="/" class="eyebrow-link">书架</a>
-        <span class="reader-meta-dot"></span>
-        <span>沉浸式阅读</span>
-      </div>
-    </div>
-
     <div class="reader-card">
       <article class="reader-content">
         <slot />
